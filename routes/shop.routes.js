@@ -9,6 +9,7 @@ import {
 
 import upload from "../middleware/multer.js";
 import employeeAuth from "../middleware/employeeAuth.js";
+import eitherAuth from "../middleware/eitherAuth.js";
 
 const shopRoute = express.Router();
 
@@ -38,7 +39,7 @@ shopRoute.post(
  */
 shopRoute.get(
   "/get",
-  employeeAuth,
+  eitherAuth,
   getAllShops
 );
 
@@ -49,7 +50,7 @@ shopRoute.get(
  */
 shopRoute.get(
   "/get/:id",
-  employeeAuth,
+  eitherAuth,
   getShopById
 );
 
@@ -60,7 +61,7 @@ shopRoute.get(
  */
 shopRoute.put(
   "/update/:id",
-  employeeAuth,
+  eitherAuth,
   upload.fields([
     { name: "ownerImage", maxCount: 1 },
     { name: "shopImages", maxCount: 2 }
@@ -75,7 +76,7 @@ shopRoute.put(
  */
 shopRoute.delete(
   "/delete/:id",
-  employeeAuth,
+  eitherAuth,
   deleteShop
 );
 
