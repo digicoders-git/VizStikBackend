@@ -6,6 +6,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { adminRoute } from './routes/admin.route.js';
 import empRoute from './routes/employee.routes.js';
+import shopRoute from './routes/shop.routes.js';
 dotenv.config()
 
 const app = express()
@@ -25,6 +26,7 @@ await connectDB();
 
 app.use('/admin',adminRoute)
 app.use('/employee',empRoute)
+app.use('/shop',shopRoute)
 
 
 // 404 handler
