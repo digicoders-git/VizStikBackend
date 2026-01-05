@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import Employee from "../model/employee.model.js";
-import Admin from "../model/admin.model.js";
+import Admin from "../model/admin.models.js";
 
 const eitherAuth = async (req, res, next) => {
   try {
