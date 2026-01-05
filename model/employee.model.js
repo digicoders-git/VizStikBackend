@@ -26,6 +26,7 @@ const employeeSchema = new mongoose.Schema(
       }
     },
 
+    // ⚠️ Plain password (as per your requirement)
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -34,6 +35,7 @@ const employeeSchema = new mongoose.Schema(
 
     /* ================= PROFILE ================= */
 
+    // ✅ ALWAYS OBJECT (NO STRING)
     profilePhoto: {
       url: {
         type: String,
@@ -84,12 +86,5 @@ const employeeSchema = new mongoose.Schema(
 
 /* ================= INDEX FOR PERFORMANCE ================= */
 employeeSchema.index({ email: 1 });
-
-/* ================= SAFE RESPONSE (HIDE PASSWORD) ================= */
-employeeSchema.methods.toJSON = function () {
-  const obj = this.toObject();
-  delete obj.password;
-  return obj;
-};
 
 export default mongoose.model("Employee", employeeSchema);

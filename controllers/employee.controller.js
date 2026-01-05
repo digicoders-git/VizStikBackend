@@ -26,26 +26,31 @@ export const createEmployee = async (req, res) => {
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // const hashedPassword = await bcrypt.hash(password, 10);
 
     // Upload profile photo (optional)
-    let profilePhoto = "";
+    let profilePhoto = { url: "", public_id: "" };
+
     if (req.file) {
       const upload = await cloudinary.uploader.upload(req.file.path, {
         folder: "employees"
       });
-      profilePhoto = upload.secure_url;
+
+      profilePhoto = {
+        url: upload.secure_url,
+        public_id: upload.public_id
+      };
     }
 
-    // Create employee
     const employee = await Employee.create({
       name,
       email,
-      password: hashedPassword,
+      password, // plain text
       phone,
       designation,
       profilePhoto
     });
+
 
     return res.status(201).json({
       message: "Employee created successfully",
@@ -90,8 +95,14 @@ export const employeeLogin = async (req, res) => {
     }
 
     // 4️⃣ Password match
-    const isMatch = await bcrypt.compare(password, employee.password);
-    if (!isMatch) {
+    // const isMatch = await bcrypt.compare(password, employee.password);
+    // if (!isMatch) {
+    //   return res.status(400).json({
+    //     message: "Invalid email or password"
+    //   });
+    // }
+
+    if (!(employee.password == password)) {
       return res.status(400).json({
         message: "Invalid email or password"
       });
@@ -165,20 +176,33 @@ export const getEmployeeById = async (req, res) => {
 ========================= */
 export const updateEmployee = async (req, res) => {
   try {
-    const { name, phone, designation, isActive } = req.body;
+    const { name, phone, designation, isActive, password } = req.body;
 
     const employee = await Employee.findById(req.params.id);
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    // Update normal fields
+    /* ================= NORMAL FIELDS ================= */
+
     if (name) employee.name = name;
     if (phone) employee.phone = phone;
     if (designation) employee.designation = designation;
     if (typeof isActive === "boolean") employee.isActive = isActive;
 
-    // 🔥 PROFILE PHOTO UPDATE
+    /* ================= PASSWORD UPDATE ================= */
+    // ⚠️ Plain password (no bcrypt)
+    if (password) {
+      if (password.length < 6) {
+        return res.status(400).json({
+          message: "Password must be at least 6 characters"
+        });
+      }
+      employee.password = password;
+    }
+
+    /* ================= PROFILE PHOTO UPDATE ================= */
+
     if (req.file) {
       // 1️⃣ Delete old image from Cloudinary
       if (employee.profilePhoto?.public_id) {
@@ -192,7 +216,7 @@ export const updateEmployee = async (req, res) => {
         folder: "employees"
       });
 
-      // 3️⃣ Save new image data
+      // 3️⃣ Save new image
       employee.profilePhoto = {
         url: upload.secure_url,
         public_id: upload.public_id
@@ -205,6 +229,7 @@ export const updateEmployee = async (req, res) => {
       message: "Employee updated successfully",
       employee
     });
+
   } catch (error) {
     return res.status(500).json({
       message: "Internal server error",
@@ -238,6 +263,65 @@ export const deleteEmployee = async (req, res) => {
     return res.status(200).json({
       message: "Employee deleted successfully"
     });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+
+/* =========================
+   CHANGE PASSWORD (EMPLOYEE)
+========================= */
+export const forgetEmployeePassword = async (req, res) => {
+  try {
+    const employeeId = req.employeeId; // from employeeAuth middleware
+    const { oldPassword, newPassword } = req.body;
+
+    // 1️⃣ Validate input
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        message: "Old password and new password are required"
+      });
+    }
+
+    if (oldPassword === newPassword) {
+      return res.status(400).json({
+        message: "New password must be different from old password"
+      });
+    }
+
+    // 2️⃣ Find employee
+    const employee = await Employee.findById(employeeId);
+    if (!employee) {
+      return res.status(404).json({
+        message: "Employee not found"
+      });
+    }
+
+    if (!employee.isActive) {
+      return res.status(403).json({
+        message: "Account disabled. Contact admin."
+      });
+    }
+
+    // 3️⃣ Match old password (PLAIN TEXT)
+    if (employee.password !== oldPassword) {
+      return res.status(400).json({
+        message: "Old password is incorrect"
+      });
+    }
+
+    // 4️⃣ Update password (PLAIN TEXT)
+    employee.password = newPassword;
+    await employee.save();
+
+    return res.status(200).json({
+      message: "Password changed successfully"
+    });
+
   } catch (error) {
     return res.status(500).json({
       message: "Internal server error",

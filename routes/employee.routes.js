@@ -1,12 +1,5 @@
 import express from "express";
-import {
-  createEmployee,
-  employeeLogin,
-  getAllEmployees,
-  getEmployeeById,
-  updateEmployee,
-  deleteEmployee
-} from "../controllers/employee.controller.js";
+import { createEmployee, employeeLogin, getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee, forgetEmployeePassword } from "../controllers/employee.controller.js";
 
 import employeeAuth from "../middleware/employeeAuth.js";
 import upload from "../middleware/multer.js"; // image upload middleware
@@ -18,13 +11,15 @@ const empRoute = express.Router();
    PUBLIC ROUTES
 ========================= */
 
-empRoute.post("/create",verifyAdminToken,upload.single("profilePhoto"),createEmployee);
+empRoute.post("/create", verifyAdminToken, upload.single("profilePhoto"), createEmployee);
 empRoute.post("/login", employeeLogin);
-empRoute.get("/get", getAllEmployees);
-empRoute.get("/get/:id", getEmployeeById);
-empRoute.put("/update/:id",upload.single("profilePhoto"),updateEmployee);
-empRoute.delete("/delete/:id", deleteEmployee);
-empRoute.get("/profile", employeeAuth, (req, res) => {res.status(200).json({message: "Employee profile",employee: req.employee});
+empRoute.get("/get",verifyAdminToken, getAllEmployees);
+empRoute.get("/get/:id",verifyAdminToken, getEmployeeById);
+empRoute.put("/update/:id",verifyAdminToken, upload.single("profilePhoto"), updateEmployee);
+empRoute.delete("/delete/:id",verifyAdminToken, deleteEmployee);
+empRoute.patch("/forget-password", employeeAuth, forgetEmployeePassword);
+empRoute.get("/profile", employeeAuth, (req, res) => {
+  res.status(200).json({ message: "Employee profile", employee: req.employee });
 });
 
 export default empRoute;
