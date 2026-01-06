@@ -282,3 +282,24 @@ export const deleteShop = async (req, res) => {
     });
   }
 };
+
+export const updateShopIsActive = async (req, res) => {
+  try {
+    const { id } = req.params
+    // console.log(id)
+    const shop = await Shop.findOne({ _id:id });
+    // console.log(shop)
+
+    if (!shop) {
+      return res.status(404).json({ message: "Shop not found !" });
+    }
+
+
+    const isBlockedUser = await Shop.findOneAndUpdate({ _id:id }, { isActive:!shop.isActive },{new:true})
+    // console.log(isBlockedUser)
+    return res.status(201).json({ message: isBlockedUser.isActive?"Shop blocked":"Employee unblocked", isBlockedUser })
+
+  } catch (error) {
+    return res.status(500).json({ message: "Inernal Server Error", error: error.message })
+  }
+}

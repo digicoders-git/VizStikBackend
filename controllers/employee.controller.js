@@ -329,3 +329,73 @@ export const forgetEmployeePassword = async (req, res) => {
     });
   }
 };
+
+
+/* ================= UPDATE EMPLOYEE ACTIVE STATUS ================= */
+// export const updateEmployeeIsAcive = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { isActive } = req.body;
+
+//     // 1️⃣ Validate ID
+//     if (!id) {
+//       return res.status(400).json({
+//         message: "Employee ID is required"
+//       });
+//     }
+
+//     // 2️⃣ Validate isActive (must be boolean)
+//     if (typeof isActive !== "boolean") {
+//       return res.status(400).json({
+//         message: "isActive value must be true or false"
+//       });
+//     }
+
+//     // 3️⃣ Update employee status
+//     const employee = await Employee.findByIdAndUpdate(
+//       id,
+//       { isActive },
+//       { new: true }
+//     );
+
+//     // 4️⃣ If employee not found
+//     if (!employee) {
+//       return res.status(404).json({
+//         message: "Employee not found"
+//       });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: `Employee ${isActive ? "activated" : "deactivated"} successfully`,
+//       employee
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal server error",
+//       error: error.message
+//     });
+//   }
+// };
+
+export const updateEmployeeIsActive = async (req, res) => {
+  try {
+    const { id } = req.params
+    // console.log(id)
+    const user = await Employee.findOne({ _id:id });
+    // console.log(user)
+
+    if (!user) {
+      return res.status(404).json({ message: "Employee not found !" });
+    }
+
+
+    const isBlockedUser = await Employee.findOneAndUpdate({ _id:id }, { isActive:!user.isActive },{new:true})
+    // console.log(isBlockedUser)
+    return res.status(201).json({ message: isBlockedUser.isActive?"Employee blocked":"Employee unblocked", isBlockedUser })
+
+  } catch (error) {
+    return res.status(500).json({ message: "Inernal Server Error", error: error.message })
+  }
+}

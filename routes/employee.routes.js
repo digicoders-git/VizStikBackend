@@ -1,5 +1,5 @@
 import express from "express";
-import { createEmployee, employeeLogin, getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee, forgetEmployeePassword } from "../controllers/employee.controller.js";
+import { createEmployee, employeeLogin, getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee, forgetEmployeePassword, updateEmployeeIsActive } from "../controllers/employee.controller.js";
 
 import employeeAuth from "../middleware/employeeAuth.js";
 import upload from "../middleware/multer.js"; // image upload middleware
@@ -21,5 +21,6 @@ empRoute.patch("/forget-password", employeeAuth, forgetEmployeePassword);
 empRoute.get("/profile", employeeAuth, (req, res) => {
   res.status(200).json({ message: "Employee profile", employee: req.employee });
 });
+empRoute.get("/employee/:id/status", updateEmployeeIsActive);
 
 export default empRoute;
