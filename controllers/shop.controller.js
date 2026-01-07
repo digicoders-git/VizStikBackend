@@ -303,3 +303,47 @@ export const updateShopIsActive = async (req, res) => {
     return res.status(500).json({ message: "Inernal Server Error", error: error.message })
   }
 }
+
+/* =========================
+   GET SHOPS BY LOGGED-IN EMPLOYEE (CREATED BY ME)
+========================= */
+export const getMyShops = async (req, res) => {
+  try {
+    const employeeId = req.employeeId; // auth middleware se aa raha hai
+
+    const { search, city, state, shopType, isActive } = req.query;
+
+    let query = {
+      createdBy: employeeId
+    };
+
+    // 🔎 Filters
+    if (city) query.city = city;
+    if (state) query.state = state;
+    if (shopType) query.shopType = shopType;
+    if (isActive !== undefined) query.isActive = isActive === "true";
+
+    // 🔍 Search
+    if (search) {
+      query.$or = [
+        { shopName: { $regex: search, $options: "i" } },
+        { ownerName: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    const shops = await Shop.find(query)
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      total: shops.length,
+      shops
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};

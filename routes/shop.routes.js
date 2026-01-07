@@ -5,7 +5,8 @@ import {
   getShopById,
   updateShop,
   deleteShop,
-  updateShopIsActive
+  updateShopIsActive,
+  getMyShops
 } from "../controllers/shop.controller.js";
 
 import upload from "../middleware/multer.js";
@@ -81,5 +82,6 @@ shopRoute.delete(
   deleteShop
 );
 shopRoute.get("/status/:id",eitherAuth, updateShopIsActive);
+shopRoute.get("/my-shops", employeeAuth, getMyShops);
 
 export default shopRoute;
