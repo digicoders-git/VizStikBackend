@@ -63,19 +63,19 @@ const shopSchema = new mongoose.Schema(
 
     /* ================= CONTACT INFO ================= */
 
-    phone: {
-      type: String,
-      required: [true, "Shop phone number is required"]
-    },
+    // phone: {
+    //   type: String,
+    //   required: [true, "Shop phone number is required"]
+    // },
 
-    alternatePhone: {
-      type: String
-    },
+    // alternatePhone: {
+    //   type: String
+    // },
 
-    email: {
-      type: String,
-      lowercase: true
-    },
+    // email: {
+    //   type: String,
+    //   lowercase: true
+    // },
 
     /* ================= ADDRESS ================= */
 
