@@ -1,5 +1,6 @@
 import Shop from "../model/shop.model.js";
 import cloudinary from "../config/cloudinary.js";
+import Employee from "../model/employee.model.js";
 
 /* =========================
    CREATE SHOP (EMPLOYEE)
@@ -104,6 +105,11 @@ export const createShop = async (req, res) => {
       createdBy: req.employeeId
     });
 
+    // 🔥 EMPLOYEE ME SHOP ID ADD KARO
+    await Employee.findByIdAndUpdate(req.employeeId, {
+      $push: { addedShops: shop._id }
+    });
+
     return res.status(201).json({
       message: "Shop created successfully",
       shop
@@ -121,9 +127,17 @@ export const createShop = async (req, res) => {
 /* =========================
    GET ALL SHOPS
 ========================= */
+/* =========================
+   GET ALL SHOPS (WITH PAGINATION)
+========================= */
 export const getAllShops = async (req, res) => {
   try {
     const { city, state, shopType, search } = req.query;
+
+    // ✅ Pagination params
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
     let query = {};
 
@@ -138,14 +152,24 @@ export const getAllShops = async (req, res) => {
       ];
     }
 
+    // 🔢 Total count
+    const total = await Shop.countDocuments(query);
+
+    // 📦 Paginated data
     const shops = await Shop.find(query)
       .populate("createdBy", "name email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     return res.status(200).json({
-      total: shops.length,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
       shops
     });
+
   } catch (error) {
     return res.status(500).json({
       message: "Internal server error",
@@ -153,6 +177,7 @@ export const getAllShops = async (req, res) => {
     });
   }
 };
+
 
 
 /* =========================
@@ -307,23 +332,29 @@ export const updateShopIsActive = async (req, res) => {
 /* =========================
    GET SHOPS BY LOGGED-IN EMPLOYEE (CREATED BY ME)
 ========================= */
+/* =========================
+   GET MY SHOPS (WITH PAGINATION)
+========================= */
 export const getMyShops = async (req, res) => {
   try {
-    const employeeId = req.employeeId; // auth middleware se aa raha hai
+    const employeeId = req.employeeId;
 
     const { search, city, state, shopType, isActive } = req.query;
+
+    // ✅ Pagination
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
     let query = {
       createdBy: employeeId
     };
 
-    // 🔎 Filters
     if (city) query.city = city;
     if (state) query.state = state;
     if (shopType) query.shopType = shopType;
     if (isActive !== undefined) query.isActive = isActive === "true";
 
-    // 🔍 Search
     if (search) {
       query.$or = [
         { shopName: { $regex: search, $options: "i" } },
@@ -332,11 +363,20 @@ export const getMyShops = async (req, res) => {
       ];
     }
 
+    // 🔢 Total count
+    const total = await Shop.countDocuments(query);
+
+    // 📦 Paginated data
     const shops = await Shop.find(query)
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     return res.status(200).json({
-      total: shops.length,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
       shops
     });
 
@@ -347,3 +387,4 @@ export const getMyShops = async (req, res) => {
     });
   }
 };
+

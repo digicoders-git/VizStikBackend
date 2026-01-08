@@ -64,6 +64,15 @@ const employeeSchema = new mongoose.Schema(
       maxlength: [50, "Designation cannot exceed 50 characters"]
     },
 
+    /* ================= SHOPS ADDED BY EMPLOYEE ================= */
+
+    addedShops: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Shop"
+      }
+    ],
+
     /* ================= STATUS ================= */
 
     isActive: {
@@ -83,6 +92,21 @@ const employeeSchema = new mongoose.Schema(
     versionKey: false
   }
 );
+
+/* ================= METHODS ================= */
+
+// Add shop to employee's addedShops
+employeeSchema.methods.addShop = function(shopId) {
+  if (!this.addedShops.includes(shopId)) {
+    this.addedShops.push(shopId);
+  }
+  return this.save();
+};
+
+// Get employee with populated shops
+employeeSchema.statics.getWithShops = function(employeeId) {
+  return this.findById(employeeId).populate('addedShops');
+};
 
 /* ================= INDEX FOR PERFORMANCE ================= */
 employeeSchema.index({ email: 1 });

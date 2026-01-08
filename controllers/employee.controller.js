@@ -135,12 +135,20 @@ export const employeeLogin = async (req, res) => {
 ========================= */
 export const getAllEmployees = async (req, res) => {
   try {
-    const employees = await Employee.find().sort({ createdAt: -1 });
+    const employees = await Employee.find()
+      .populate("addedShops")
+      .sort({ createdAt: -1 });
+
+    const result = employees.map(emp => ({
+      ...emp.toObject(),
+      totalShops: emp.addedShops.length
+    }));
 
     return res.status(200).json({
-      total: employees.length,
-      employees
+      total: result.length,
+      employees: result
     });
+
   } catch (error) {
     return res.status(500).json({
       message: "Internal server error",
@@ -149,12 +157,14 @@ export const getAllEmployees = async (req, res) => {
   }
 };
 
+
 /* =========================
    GET SINGLE EMPLOYEE
 ========================= */
 export const getEmployeeById = async (req, res) => {
   try {
-    const employee = await Employee.findById(req.params.id);
+    const employee = await Employee.findById(req.params.id)
+      .populate("addedShops"); // 🔥 SHOP POPULATE
 
     if (!employee) {
       return res.status(404).json({
@@ -162,7 +172,13 @@ export const getEmployeeById = async (req, res) => {
       });
     }
 
-    return res.status(200).json(employee);
+    const totalShops = employee.addedShops.length;
+
+    return res.status(200).json({
+      ...employee.toObject(),
+      totalShops
+    });
+
   } catch (error) {
     return res.status(500).json({
       message: "Internal server error",
@@ -170,6 +186,7 @@ export const getEmployeeById = async (req, res) => {
     });
   }
 };
+
 
 /* =========================
    UPDATE EMPLOYEE
@@ -378,6 +395,26 @@ export const forgetEmployeePassword = async (req, res) => {
 //     });
 //   }
 // };
+
+/* =========================
+   GET EMPLOYEE WITH SHOPS
+========================= */
+export const getEmployeeWithShops = async (req, res) => {
+  try {
+    const employee = await Employee.getWithShops(req.params.id);
+    
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+    
+    return res.status(200).json(employee);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
 
 export const updateEmployeeIsActive = async (req, res) => {
   try {
