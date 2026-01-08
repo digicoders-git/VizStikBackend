@@ -30,7 +30,7 @@ const employeeSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, "Password is required"],
-      minlength: [6, "Password must be at least 6 characters"]
+      // minlength: [6, "Password must be at least 6 characters"]
     },
 
     /* ================= PROFILE ================= */
