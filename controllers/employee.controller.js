@@ -70,17 +70,17 @@ export const createEmployee = async (req, res) => {
 
 export const employeeLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { phone, password } = req.body;
 
     // 1️⃣ Validate input
-    if (!email || !password) {
+    if (!phone || !password) {
       return res.status(400).json({
-        message: "Email and password are required"
+        message: "phone and password are required"
       });
     }
 
     // 2️⃣ Check employee exists
-    const employee = await Employee.findOne({ email });
+    const employee = await Employee.findOne({ phone });
     if (!employee) {
       return res.status(404).json({
         message: "Employee not found"

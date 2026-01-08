@@ -136,7 +136,7 @@ export const getAllShops = async (req, res) => {
 
     // ✅ Pagination params
     const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10000;
+    const limit = Number(req.query.limit) || 10000000;
     const skip = (page - 1) * limit;
 
     let query = {};
@@ -343,7 +343,7 @@ export const getMyShops = async (req, res) => {
 
     // ✅ Pagination
     const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10000;
+    const limit = Number(req.query.limit) || 1000000;
     const skip = (page - 1) * limit;
 
     let query = {
