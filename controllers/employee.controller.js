@@ -3,6 +3,29 @@ import bcrypt from "bcryptjs";
 import generateToken from "../config/token.js";
 import cloudinary from "../config/cloudinary.js";
 
+function isValidIndianMobile(number) {
+  const num = String(number);
+
+  // length 10 honi chahiye
+  if (num.length !== 10) return false;
+
+  // only digits
+  for (let i = 0; i < num.length; i++) {
+    if (num[i] < "0" || num[i] > "9") {
+      return false;
+    }
+  }
+
+  // starting digit 6,7,8,9
+  const first = num[0];
+  if (first !== "6" && first !== "7" && first !== "8" && first !== "9") {
+    return false;
+  }
+
+  return true;
+}
+
+
 /* =========================
    CREATE EMPLOYEE
 ========================= */
@@ -14,6 +37,18 @@ export const createEmployee = async (req, res) => {
     if (!name || !email || !password) {
       return res.status(400).json({
         message: "Name, email and password are required"
+      });
+    }
+
+    if(password.length < 6){
+      return res.status(400).json({
+        message: "Password must be 6 letters"
+      });
+    }
+    // ✅ Phone number validation (Indian)
+    if (!isValidIndianMobile(phone)) {
+      return res.status(400).json({
+        message: "Invalid mobile number"
       });
     }
 
