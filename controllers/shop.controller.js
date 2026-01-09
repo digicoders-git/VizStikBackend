@@ -186,9 +186,9 @@ export const createShop = async (req, res) => {
 ========================= */
 export const getAllShops = async (req, res) => {
   try {
-    const { city, state, shopType, search } = req.query;
+    const { city, state, shopType, search, date } = req.query;
 
-    // ✅ Pagination params
+    // ✅ Pagination
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10000000;
     const skip = (page - 1) * limit;
@@ -199,6 +199,7 @@ export const getAllShops = async (req, res) => {
     if (state) query.state = state;
     if (shopType) query.shopType = shopType;
 
+    // 🔍 Search
     if (search) {
       query.$or = [
         { shopName: { $regex: search, $options: "i" } },
@@ -206,10 +207,24 @@ export const getAllShops = async (req, res) => {
       ];
     }
 
+    // 📅 Date filter (NEW)
+    if (date) {
+      const startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+
+      query.createdAt = {
+        $gte: startDate,
+        $lte: endDate
+      };
+    }
+
     // 🔢 Total count
     const total = await Shop.countDocuments(query);
 
-    // 📦 Paginated data
+    // 📦 Data
     const shops = await Shop.find(query)
       .populate("createdBy", "name email")
       .sort({ createdAt: -1 })
@@ -231,6 +246,7 @@ export const getAllShops = async (req, res) => {
     });
   }
 };
+
 
 
 
