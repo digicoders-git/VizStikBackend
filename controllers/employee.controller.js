@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import generateToken from "../config/token.js";
 import cloudinary from "../config/cloudinary.js";
 import { sendOtpSms } from "../utils/sendSms.js";
+import Shop from "../model/shop.model.js";
 
 function isValidIndianMobile(number) {
   const num = String(number);
@@ -535,9 +536,6 @@ export const updateEmployeeIsActive = async (req, res) => {
   }
 }
 
-
-
-
 export const sendLoginOtp = async (req, res) => {
   try {
     const { phone } = req.body;
@@ -623,3 +621,73 @@ export const verifyLoginOtp = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+export const getStats = async (req, res) => {
+  try {
+    const employeeId = req.employeeId;
+
+    const { search, city, state, shopType, isActive } = req.query;
+
+    // ✅ Pagination
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 1000000;
+    const skip = (page - 1) * limit;
+
+    let query = {
+      createdBy: employeeId
+    };
+
+    if (city) query.city = city;
+    if (state) query.state = state;
+    if (shopType) query.shopType = shopType;
+    if (isActive !== undefined) query.isActive = isActive === "true";
+
+    if (search) {
+      query.$or = [
+        { shopName: { $regex: search, $options: "i" } },
+        { ownerName: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    // 🔢 Total count (with filters)
+    const total = await Shop.countDocuments(query);
+
+    // 📅 TODAY DATE RANGE
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // 🆕 Today shops count (employee wise)
+    const todayCount = await Shop.countDocuments({
+      createdBy: employeeId,
+      createdAt: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    });
+
+    // 📦 Paginated data
+    const shops = await Shop.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    return res.status(200).json({
+      page,
+      total,              // total shops (filtered)
+      todayCount,         // 🆕 today added shops
+      totalPages: Math.ceil(total / limit),
+      shops
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
