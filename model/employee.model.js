@@ -8,8 +8,8 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       required: [true, "Employee name is required"],
       trim: true,
-      minlength: [2, "Name must be at least 2 characters"],
-      maxlength: [50, "Name cannot exceed 50 characters"]
+      // minlength: [2, "Name must be at least 2 characters"],
+      // maxlength: [50, "Name cannot exceed 50 characters"]
     },
 
     email: {
@@ -50,18 +50,18 @@ const employeeSchema = new mongoose.Schema(
     phone: {
       type: String,
       trim: true,
-      validate: {
-        validator: function (v) {
-          return !v || v.length >= 10;
-        },
-        message: "Phone number must be at least 10 digits"
-      }
+      // validate: {
+      //   validator: function (v) {
+      //     return !v || v.length >= 10;
+      //   },
+      //   message: "Phone number must be at least 10 digits"
+      // }
     },
 
     designation: {
       type: String,
       trim: true,
-      maxlength: [50, "Designation cannot exceed 50 characters"]
+      // maxlength: [50, "Designation cannot exceed 50 characters"]
     },
 
     /* ================= SHOPS ADDED BY EMPLOYEE ================= */

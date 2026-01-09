@@ -2,6 +2,28 @@ import Shop from "../model/shop.model.js";
 import cloudinary from "../config/cloudinary.js";
 import Employee from "../model/employee.model.js";
 
+
+function isValidIndianMobile(number) {
+  const num = String(number);
+
+  // length 10 honi chahiye
+  if (num.length !== 10) return false;
+
+  // only digits
+  for (let i = 0; i < num.length; i++) {
+    if (num[i] < "0" || num[i] > "9") {
+      return false;
+    }
+  }
+
+  // starting digit 6,7,8,9
+  const first = num[0];
+  if (first !== "6" && first !== "7" && first !== "8" && first !== "9") {
+    return false;
+  }
+
+  return true;
+}
 /* =========================
    CREATE SHOP (EMPLOYEE)
 ========================= */
@@ -30,11 +52,43 @@ export const createShop = async (req, res) => {
     } = req.body;
 
     // 🔒 Validation
-    if (!shopName || !phone || !address || !latitude || !longitude) {
+    if (!shopName || !ownerPhone || !address || !latitude || !longitude) {
       return res.status(400).json({
         message: "shopName, phone, address, latitude and longitude are required"
       });
     }
+
+    if (!isValidIndianMobile(ownerPhone)) {
+      return res.status(400).json({
+        message: "Invalid mobile number"
+      });
+    }
+
+    // 🔍 Duplicate check in one query
+    const duplicateShop = await Shop.findOne({
+      $or: [
+        { ownerPhone },
+        { ownerEmail },
+        { gstNumber }
+      ]
+    });
+
+    if (duplicateShop) {
+      if (duplicateShop.ownerPhone === ownerPhone) {
+        return res.status(400).json({ message: "phone already registered" });
+      }
+      if (duplicateShop.ownerEmail === ownerEmail) {
+        return res.status(400).json({ message: "email already registered" });
+      }
+      if (duplicateShop.gstNumber === gstNumber) {
+        return res.status(400).json({ message: "GST number already registered" });
+      }
+
+      return res.status(400).json({
+        message: "Shop already exists"
+      });
+    }
+
 
     /* ================= OWNER IMAGE ================= */
     let ownerImage = { url: "", public_id: "" };
@@ -312,7 +366,7 @@ export const updateShopIsActive = async (req, res) => {
   try {
     const { id } = req.params
     // console.log(id)
-    const shop = await Shop.findOne({ _id:id });
+    const shop = await Shop.findOne({ _id: id });
     // console.log(shop)
 
     if (!shop) {
@@ -320,9 +374,9 @@ export const updateShopIsActive = async (req, res) => {
     }
 
 
-    const isBlockedUser = await Shop.findOneAndUpdate({ _id:id }, { isActive:!shop.isActive },{new:true})
+    const isBlockedUser = await Shop.findOneAndUpdate({ _id: id }, { isActive: !shop.isActive }, { new: true })
     // console.log(isBlockedUser)
-    return res.status(201).json({ message: isBlockedUser.isActive?"Shop blocked":"Employee unblocked", isBlockedUser })
+    return res.status(201).json({ message: isBlockedUser.isActive ? "Shop blocked" : "Employee unblocked", isBlockedUser })
 
   } catch (error) {
     return res.status(500).json({ message: "Inernal Server Error", error: error.message })

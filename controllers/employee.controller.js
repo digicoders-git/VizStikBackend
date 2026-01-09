@@ -40,7 +40,7 @@ export const createEmployee = async (req, res) => {
       });
     }
 
-    if(password.length < 6){
+    if (password.length < 6) {
       return res.status(400).json({
         message: "Password must be 6 letters"
       });
@@ -53,10 +53,29 @@ export const createEmployee = async (req, res) => {
     }
 
     // Check existing employee
-    const existEmployee = await Employee.findOne({ email });
-    if (existEmployee) {
+    // 🔍 Check duplicate email or phone
+    const existingEmployee = await Employee.findOne({
+      $or: [
+        { email },
+        { phone }
+      ]
+    });
+
+    if (existingEmployee) {
+      if (existingEmployee.email === email) {
+        return res.status(400).json({
+          message: "Employee already exists with this email"
+        });
+      }
+
+      if (existingEmployee.phone === phone) {
+        return res.status(400).json({
+          message: "Employee already exists with this mobile number"
+        });
+      }
+
       return res.status(400).json({
-        message: "Employee already exists with this email"
+        message: "Employee already exists"
       });
     }
 
@@ -139,7 +158,7 @@ export const employeeLogin = async (req, res) => {
 
     if (!(employee.password == password)) {
       return res.status(400).json({
-        message: "Invalid email or password"
+        message: "password is wrong"
       });
     }
 
@@ -177,7 +196,7 @@ export const getAllEmployees = async (req, res) => {
 
     // ✅ Pagination
     const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10;
+    const limit = Number(req.query.limit) || 10000000;
     const skip = (page - 1) * limit;
 
     let query = {};
@@ -275,6 +294,11 @@ export const updateEmployee = async (req, res) => {
 
     /* ================= NORMAL FIELDS ================= */
 
+    if (!isValidIndianMobile(phone)) {
+      return res.status(400).json({
+        message: "Invalid mobile number"
+      });
+    }
     if (name) employee.name = name;
     if (phone) employee.phone = phone;
     if (designation) employee.designation = designation;
@@ -475,11 +499,11 @@ export const forgetEmployeePassword = async (req, res) => {
 export const getEmployeeWithShops = async (req, res) => {
   try {
     const employee = await Employee.getWithShops(req.params.id);
-    
+
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }
-    
+
     return res.status(200).json(employee);
   } catch (error) {
     return res.status(500).json({
@@ -493,7 +517,7 @@ export const updateEmployeeIsActive = async (req, res) => {
   try {
     const { id } = req.params
     // console.log(id)
-    const user = await Employee.findOne({ _id:id });
+    const user = await Employee.findOne({ _id: id });
     // console.log(user)
 
     if (!user) {
@@ -501,9 +525,9 @@ export const updateEmployeeIsActive = async (req, res) => {
     }
 
 
-    const isBlockedUser = await Employee.findOneAndUpdate({ _id:id }, { isActive:!user.isActive },{new:true})
+    const isBlockedUser = await Employee.findOneAndUpdate({ _id: id }, { isActive: !user.isActive }, { new: true })
     // console.log(isBlockedUser)
-    return res.status(201).json({ message: isBlockedUser.isActive?"Employee blocked":"Employee unblocked", isBlockedUser })
+    return res.status(201).json({ message: isBlockedUser.isActive ? "Employee blocked" : "Employee unblocked", isBlockedUser })
 
   } catch (error) {
     return res.status(500).json({ message: "Inernal Server Error", error: error.message })
