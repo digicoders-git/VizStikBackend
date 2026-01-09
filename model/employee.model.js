@@ -85,18 +85,32 @@ const employeeSchema = new mongoose.Schema(
     lastLogin: {
       type: Date,
       default: null
-    }
+    },
+    /* ================= OTP LOGIN ================= */
+
+    otp: {
+      type: String,
+      default: null
+    },
+
+    otpExpire: {
+      type: Date,
+      default: null
+    },
   },
   {
     timestamps: true,
     versionKey: false
-  }
+  },
+
 );
+
+
 
 /* ================= METHODS ================= */
 
 // Add shop to employee's addedShops
-employeeSchema.methods.addShop = function(shopId) {
+employeeSchema.methods.addShop = function (shopId) {
   if (!this.addedShops.includes(shopId)) {
     this.addedShops.push(shopId);
   }
@@ -104,7 +118,7 @@ employeeSchema.methods.addShop = function(shopId) {
 };
 
 // Get employee with populated shops
-employeeSchema.statics.getWithShops = function(employeeId) {
+employeeSchema.statics.getWithShops = function (employeeId) {
   return this.findById(employeeId).populate('addedShops');
 };
 

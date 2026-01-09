@@ -2,6 +2,7 @@ import Employee from "../model/employee.model.js";
 import bcrypt from "bcryptjs";
 import generateToken from "../config/token.js";
 import cloudinary from "../config/cloudinary.js";
+import { sendOtpSms } from "../utils/sendSms.js";
 
 function isValidIndianMobile(number) {
   const num = String(number);
@@ -533,3 +534,92 @@ export const updateEmployeeIsActive = async (req, res) => {
     return res.status(500).json({ message: "Inernal Server Error", error: error.message })
   }
 }
+
+
+
+
+export const sendLoginOtp = async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({ message: "Phone is required" });
+    }
+
+    const employee = await Employee.findOne({ phone });
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    if (!employee.isActive) {
+      return res.status(403).json({ message: "Account disabled" });
+    }
+
+    // 🔢 Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    employee.otp = otp;
+    employee.otpExpire = new Date(Date.now() + 5 * 60 * 1000); // 5 min
+    await employee.save();
+
+    // 📩 Send SMS
+    const smsSent = await sendOtpSms(phone, otp);
+
+    if (!smsSent) {
+      return res.status(500).json({
+        message: "Failed to send OTP SMS"
+      });
+    }
+
+    return res.json({
+      message: "OTP sent successfully"
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
+export const verifyLoginOtp = async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+
+    if (!phone || !otp) {
+      return res.status(400).json({ message: "Phone and OTP required" });
+    }
+
+    const employee = await Employee.findOne({ phone });
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    if (!employee.otp || employee.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    if (employee.otpExpire < new Date()) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    // ✅ Clear OTP
+    employee.otp = null;
+    employee.otpExpire = null;
+    employee.lastLogin = new Date();
+    await employee.save();
+
+    // 🎟 Generate token
+    const token = generateToken(employee._id);
+
+    return res.json({
+      message: "Login successful",
+      token,
+      employee
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
