@@ -64,6 +64,16 @@ const employeeSchema = new mongoose.Schema(
       // maxlength: [50, "Designation cannot exceed 50 characters"]
     },
 
+    state:{
+      type:String
+    },
+    city:{
+      type:String
+    },
+    area:{
+      type:String
+    },
+
     /* ================= SHOPS ADDED BY EMPLOYEE ================= */
 
     addedShops: [

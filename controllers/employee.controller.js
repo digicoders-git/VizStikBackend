@@ -33,7 +33,7 @@ function isValidIndianMobile(number) {
 ========================= */
 export const createEmployee = async (req, res) => {
   try {
-    const { name, email, password, phone, designation } = req.body;
+    const { name, email, password,state,city,area, phone, designation } = req.body;
 
     // Required fields check
     if (!name || !email || !password) {
@@ -103,6 +103,9 @@ export const createEmployee = async (req, res) => {
       email,
       password, // plain text
       phone,
+      state,
+      city,
+      area,
       designation,
       profilePhoto
     });
@@ -287,7 +290,7 @@ export const getEmployeeById = async (req, res) => {
 ========================= */
 export const updateEmployee = async (req, res) => {
   try {
-    const { name, phone, designation, isActive, password } = req.body;
+    const { name, phone, designation,state,city,area, isActive, password } = req.body;
 
     const employee = await Employee.findById(req.params.id);
     if (!employee) {
@@ -304,6 +307,9 @@ export const updateEmployee = async (req, res) => {
     if (name) employee.name = name;
     if (phone) employee.phone = phone;
     if (designation) employee.designation = designation;
+    if (state) employee.state = state;
+    if (city) employee.city = city;
+    if (area) employee.area = area;
     if (typeof isActive === "boolean") employee.isActive = isActive;
 
     /* ================= PASSWORD UPDATE ================= */
