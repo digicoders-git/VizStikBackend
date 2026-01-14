@@ -11,7 +11,6 @@ import prefieldsRoute from './routes/prefield.routes.js';
 import outletRoute from './routes/outlet.routes.js';
 import branchRoute from './routes/branch.routes.js';
 import subAdminRoute from './routes/subAdmin.route.js';
-import loginRoute from './routes/login.routes.js';
 dotenv.config()
 
 const app = express()
@@ -36,7 +35,6 @@ app.use('/prefields',prefieldsRoute)
 app.use('/outlets',outletRoute)
 app.use('/branch',branchRoute)
 app.use('/subAdmin',subAdminRoute)
-app.use('/admins',loginRoute)
 
 
 // 404 handler

@@ -259,7 +259,7 @@ export const getOutletDashboardStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Outlet Dashboard Error:", error);
+    console.error("Outlet Dashboard Error:", error.message);
     res.status(500).json({
       success: false,
       message: "Server error"

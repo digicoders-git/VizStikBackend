@@ -35,6 +35,7 @@ const employeeAuth = async (req, res, next) => {
     // 4️⃣ Attach employee to request
     req.employee = employee;
     req.employeeId = employee._id;
+    // console.log(req.employee,req.employeeId)
 
     next();
   } catch (error) {

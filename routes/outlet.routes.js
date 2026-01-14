@@ -13,6 +13,7 @@ import upload from "../middleware/multer.js";
 
 const outletRoute = express.Router();
 
+outletRoute.get("/dashboard", employeeAuth, getOutletDashboardStats);
 outletRoute.post(
   "/create",
   employeeAuth,
@@ -20,7 +21,6 @@ outletRoute.post(
   createOutlet
 );
 
-outletRoute.get("/", employeeAuth, getMyOutlets);
 outletRoute.get("/:id", employeeAuth, getOutletById);
 
 outletRoute.put(
@@ -31,6 +31,6 @@ outletRoute.put(
 );
 
 outletRoute.delete("/:id", employeeAuth, deleteOutlet);
-outletRoute.get("/dashboard", employeeAuth, getOutletDashboardStats);
+outletRoute.get("/", employeeAuth, getMyOutlets);
 
 export default outletRoute;
