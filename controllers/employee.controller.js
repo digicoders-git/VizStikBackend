@@ -1,9 +1,10 @@
 import Employee from "../model/employee.model.js";
-import bcrypt from "bcryptjs";
 import generateToken from "../config/token.js";
 import cloudinary from "../config/cloudinary.js";
 import { sendOtpSms } from "../utils/sendSms.js";
 import Shop from "../model/shop.model.js";
+import Prefield from "../model/prefield.model.js";
+
 
 function isValidIndianMobile(number) {
   const num = String(number);
@@ -697,3 +698,152 @@ export const getStats = async (req, res) => {
   }
 };
 
+
+
+// ===================================================
+
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit
+};
+
+export const registerOrUpdateEmployee = async (req, res) => {
+  try {
+    const {
+      WD_Code,
+      Branch,
+      Govt_District,
+      Circle_AM,
+      Section_AE,
+      City,
+      typeOfDs,
+      dsName,
+      dsMobile
+    } = req.body;
+
+    // 1️⃣ Check WD_Code exists in Prefield or not
+    const validWD = await Prefield.findOne({ WD_Code });
+
+    if (!validWD) {
+      return res.status(400).json({
+        success: false,
+        message: "WD code is wrong"
+      });
+    }
+
+    // 2️⃣ Check employee exists or not
+    let employee = await Employee.findOne({ WD_Code });
+
+    // 3️⃣ Generate OTP
+    const otp = generateOTP();
+    const otpExpire = new Date(Date.now() + 5 * 60 * 1000); // 5 min
+
+    if (employee) {
+      // 🔁 Update existing user
+      employee.Branch = Branch;
+      employee.Govt_District = Govt_District;
+      employee.Circle_AM = Circle_AM;
+      employee.Section_AE = Section_AE;
+      employee.City = City;
+      employee.typeOfDs = typeOfDs;
+      employee.dsName = dsName;
+      employee.dsMobile = dsMobile;
+      employee.otp = otp;
+      employee.otpExpire = otpExpire;
+
+      await employee.save();
+    } else {
+      // 🆕 Create new user
+      employee = await Employee.create({
+        WD_Code,
+        Branch,
+        Govt_District,
+        Circle_AM,
+        Section_AE,
+        City,
+        typeOfDs,
+        dsName,
+        dsMobile,
+        otp,
+        otpExpire
+      });
+    }
+
+    // 4️⃣ Send OTP SMS
+    const smsSent = await sendOtpSms(dsMobile, otp);
+
+    if (!smsSent) {
+      return res.status(500).json({
+        success: false,
+        message: "OTP Not Sent"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `OTP have been sent on this ${dsMobile}`,
+      employeeId: employee._id
+    });
+
+  } catch (error) {
+    console.error("Register Employee Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};
+
+
+export const verifyOtpAndLogin = async (req, res) => {
+  try {
+    const { dsMobile, otp } = req.body;
+
+    const employee = await Employee.findOne({ dsMobile });
+
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: "User nahi mila"
+      });
+    }
+
+    // 1️⃣ OTP match
+    if (employee.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP galat hai"
+      });
+    }
+
+    // 2️⃣ OTP expiry check
+    if (employee.otpExpire < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expire ho chuka hai"
+      });
+    }
+
+    // 3️⃣ Clear OTP
+    employee.otp = null;
+    employee.otpExpire = null;
+    employee.lastLogin = new Date();
+    await employee.save();
+
+    // 4️⃣ Generate token
+    const token = generateToken(employee._id);
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      employee
+    });
+
+  } catch (error) {
+    console.error("Verify OTP Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};

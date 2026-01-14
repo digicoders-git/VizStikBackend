@@ -1,5 +1,5 @@
 import express from "express";
-import { createEmployee, employeeLogin, getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee, forgetEmployeePassword, updateEmployeeIsActive, getEmployeeWithShops, sendLoginOtp, verifyLoginOtp, getStats } from "../controllers/employee.controller.js";
+import { createEmployee, employeeLogin, getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee, forgetEmployeePassword, updateEmployeeIsActive, getEmployeeWithShops, sendLoginOtp, verifyLoginOtp, getStats, registerOrUpdateEmployee, verifyOtpAndLogin } from "../controllers/employee.controller.js";
 
 import employeeAuth from "../middleware/employeeAuth.js";
 import upload from "../middleware/multer.js"; // image upload middleware
@@ -27,5 +27,8 @@ empRoute.post("/login-password", employeeLogin);
 empRoute.post("/login-otp-send", sendLoginOtp);
 empRoute.post("/login-otp-verify", verifyLoginOtp);
 empRoute.get("/stats",employeeAuth, getStats);
+
+empRoute.post("/register", registerOrUpdateEmployee);
+empRoute.post("/verify-otp", verifyOtpAndLogin);
 
 export default empRoute;
