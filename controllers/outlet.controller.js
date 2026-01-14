@@ -3,20 +3,41 @@ import Outlet from "../model/outlet.model.js";
 /* =========================
    CREATE OUTLET
 ========================= */
+// import Outlet from "../model/outlet.model.js";
+import cloudinary from "../config/cloudinary.js";
+
+/* =========================
+   CREATE OUTLET
+========================= */
 export const createOutlet = async (req, res) => {
   try {
     const { activity, outletMobile, latitude, longitude } = req.body;
 
-    // images from multer + cloudinary
-    const outletImages = req.files.map(file => ({
-      url: file.path,
-      public_id: file.filename
-    }));
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least 1 image is required"
+      });
+    }
 
-    if (outletImages.length < 1 || outletImages.length > 8) {
+    if (req.files.length < 1 || req.files.length > 8) {
       return res.status(400).json({
         success: false,
         message: "Minimum 1 and maximum 8 images allowed"
+      });
+    }
+
+    // ✅ Upload images to Cloudinary
+    const outletImages = [];
+
+    for (const file of req.files) {
+      const upload = await cloudinary.uploader.upload(file.path, {
+        folder: "outlets"
+      });
+
+      outletImages.push({
+        url: upload.secure_url,
+        public_id: upload.public_id
       });
     }
 
@@ -28,12 +49,12 @@ export const createOutlet = async (req, res) => {
         longitude: Number(longitude)
       },
       outletImages,
-      createdBy: req.employeeId // auth middleware se
+      createdBy: req.employeeId
     });
 
     res.status(201).json({
       success: true,
-      message: "Outlet created",
+      message: "Outlet created successfully",
       data: outlet
     });
 
