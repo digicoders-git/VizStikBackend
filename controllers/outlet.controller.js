@@ -217,3 +217,52 @@ export const deleteOutlet = async (req, res) => {
     });
   }
 };
+
+/* =========================
+   OUTLET DASHBOARD STATS
+========================= */
+export const getOutletDashboardStats = async (req, res) => {
+  try {
+    const employeeId = req.employeeId; // auth middleware se aa raha hai
+
+    // 1️⃣ Total outlets
+    const totalOutlets = await Outlet.countDocuments({ createdBy: employeeId });
+
+    // 2️⃣ Today's date range
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // 3️⃣ Today added outlets count
+    const todayOutlets = await Outlet.countDocuments({
+      createdBy: employeeId,
+      createdAt: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    });
+
+    // 4️⃣ Last 5 recent outlets
+    const recentOutlets = await Outlet.find({ createdBy: employeeId })
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        totalOutlets,
+        todayOutlets,
+        recentOutlets
+      }
+    });
+
+  } catch (error) {
+    console.error("Outlet Dashboard Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};

@@ -1,3 +1,4 @@
+import generateToken from "../config/token.js";
 import Login from "../model/login.model.js";
 
 /* =========================
@@ -44,3 +45,37 @@ export const createLoginUser = async (req, res) => {
     });
   }
 };
+
+export const loginUser = async (req,res) => {
+  try {
+    const { name, password } = req.body;
+    if (!name || !password) {
+      return res.status(400).json({message:"Please Enter All Fields"})
+    }
+    const user = await Login.findOne({name})
+    if (!user) {
+      return res.status(400).json({message:"User Not Found"})
+    }
+    if(user.password !== password){
+      return res.status(400).json({message:"Incorrect Password"})
+    }
+    let token;
+    try {
+      token = generateToken(user._id)
+    } catch (error) {
+      return res.status(500).json({ message: "Token not found !" })
+    }
+    return res.status(200).json({
+      name: user.name,
+      password: user.password,
+      role: user.role,
+      token
+    })
+  } catch (error) {
+    console.error("Create Login User Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+}

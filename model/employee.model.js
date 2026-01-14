@@ -65,6 +65,15 @@ const employeeSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
+    
+isVerified: {
+  type: Boolean,
+  default: false
+},
+tempData: {
+  type: Object,
+  default: null
+}
   },
   {
     timestamps: true,
@@ -72,6 +81,8 @@ const employeeSchema = new mongoose.Schema(
   },
 
 );
+
+
 
 
 

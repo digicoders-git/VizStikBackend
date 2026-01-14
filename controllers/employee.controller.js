@@ -720,78 +720,100 @@ export const registerOrUpdateEmployee = async (req, res) => {
       dsMobile
     } = req.body;
 
-    // 1️⃣ Check WD_Code exists in Prefield or not
+    // 1️⃣ Check WD_Code exists
     const validWD = await Prefield.findOne({ WD_Code });
-
     if (!validWD) {
+      return res.status(400).json({ success: false, message: "WD code is wrong" });
+    }
+
+    // 2️⃣ Check existing employee by WD_Code
+    let employee = await Employee.findOne({ WD_Code });
+
+    // 3️⃣ Check mobile used by another WD
+    const mobileUsed = await Employee.findOne({
+      dsMobile,
+      WD_Code: { $ne: WD_Code }
+    });
+
+    if (mobileUsed) {
       return res.status(400).json({
         success: false,
-        message: "WD code is wrong"
+        message: "This mobile number is already registered with another WD Code"
       });
     }
 
-    // 2️⃣ Check employee exists or not
-    let employee = await Employee.findOne({ WD_Code });
-
-    // 3️⃣ Generate OTP
+    // 4️⃣ Generate OTP
     const otp = generateOTP();
-    const otpExpire = new Date(Date.now() + 5 * 60 * 1000); // 5 min
+    const otpExpire = new Date(Date.now() + 5 * 60 * 1000);
 
+    // ===============================
+    // CASE 1: WD exists
+    // ===============================
     if (employee) {
-      // 🔁 Update existing user
-      employee.Branch = Branch;
-      employee.Govt_District = Govt_District;
-      employee.Circle_AM = Circle_AM;
-      employee.Section_AE = Section_AE;
-      employee.City = City;
-      employee.typeOfDs = typeOfDs;
-      employee.dsName = dsName;
-      employee.dsMobile = dsMobile;
+      if (employee.dsMobile !== dsMobile) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid mobile number for this WD Code"
+        });
+      }
+
+      // ❗ DO NOT UPDATE REAL DATA YET
       employee.otp = otp;
       employee.otpExpire = otpExpire;
-
-      await employee.save();
-    } else {
-      // 🆕 Create new user
-      employee = await Employee.create({
-        WD_Code,
+      employee.tempData = {
         Branch,
         Govt_District,
         Circle_AM,
         Section_AE,
         City,
         typeOfDs,
-        dsName,
+        dsName
+      };
+
+      await employee.save();
+    }
+
+    // ===============================
+    // CASE 2: New WD → Create TEMP record only
+    // ===============================
+    else {
+      employee = await Employee.create({
+        WD_Code,
         dsMobile,
         otp,
-        otpExpire
+        otpExpire,
+        isVerified: false,
+        tempData: {
+          Branch,
+          Govt_District,
+          Circle_AM,
+          Section_AE,
+          City,
+          typeOfDs,
+          dsName
+        }
       });
     }
 
-    // 4️⃣ Send OTP SMS
+    // 5️⃣ Send OTP
     const smsSent = await sendOtpSms(dsMobile, otp);
-
     if (!smsSent) {
-      return res.status(500).json({
-        success: false,
-        message: "OTP Not Sent"
-      });
+      return res.status(500).json({ success: false, message: "OTP Not Sent" });
     }
 
     res.status(200).json({
       success: true,
-      message: `OTP have been sent on this ${dsMobile}`,
-      employeeId: employee._id
+      message: `OTP sent to ${dsMobile}`,
+      tempEmployeeId: employee._id
     });
 
   } catch (error) {
     console.error("Register Employee Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server Error"
-    });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
+
+
 
 
 export const verifyOtpAndLogin = async (req, res) => {
@@ -799,37 +821,31 @@ export const verifyOtpAndLogin = async (req, res) => {
     const { dsMobile, otp } = req.body;
 
     const employee = await Employee.findOne({ dsMobile });
-
     if (!employee) {
-      return res.status(404).json({
-        success: false,
-        message: "User nahi mila"
-      });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // 1️⃣ OTP match
     if (employee.otp !== otp) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP galat hai"
-      });
+      return res.status(400).json({ success: false, message: "Wrong OTP" });
     }
 
-    // 2️⃣ OTP expiry check
     if (employee.otpExpire < new Date()) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP expire ho chuka hai"
-      });
+      return res.status(400).json({ success: false, message: "OTP expired" });
     }
 
-    // 3️⃣ Clear OTP
+    // ✅ Now FINALIZE DATA
+    if (employee.tempData) {
+      Object.assign(employee, employee.tempData);
+      employee.tempData = null;
+    }
+
+    employee.isVerified = true;
     employee.otp = null;
     employee.otpExpire = null;
     employee.lastLogin = new Date();
+
     await employee.save();
 
-    // 4️⃣ Generate token
     const token = generateToken(employee._id);
 
     res.status(200).json({
@@ -841,9 +857,6 @@ export const verifyOtpAndLogin = async (req, res) => {
 
   } catch (error) {
     console.error("Verify OTP Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server Error"
-    });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };

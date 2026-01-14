@@ -4,7 +4,8 @@ import {
   getMyOutlets,
   getOutletById,
   updateOutlet,
-  deleteOutlet
+  deleteOutlet,
+  getOutletDashboardStats
 } from "../controllers/outlet.controller.js";
 
 import employeeAuth from "../middleware/employeeAuth.js";
@@ -30,5 +31,6 @@ outletRoute.put(
 );
 
 outletRoute.delete("/:id", employeeAuth, deleteOutlet);
+outletRoute.get("/dashboard", employeeAuth, getOutletDashboardStats);
 
 export default outletRoute;
