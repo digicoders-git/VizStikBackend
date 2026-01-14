@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import { adminRoute } from './routes/admin.route.js';
 import empRoute from './routes/employee.routes.js';
 import shopRoute from './routes/shop.routes.js';
+import prefieldsRoute from './routes/prefield.routes.js';
 dotenv.config()
 
 const app = express()
@@ -27,6 +28,7 @@ await connectDB();
 app.use('/admin',adminRoute)
 app.use('/employee',empRoute)
 app.use('/shop',shopRoute)
+app.use('/prefields',prefieldsRoute)
 
 
 // 404 handler
