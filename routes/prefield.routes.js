@@ -4,5 +4,5 @@ import { getAllPrefields, getDataByCode } from '../controllers/prefield.controll
 const prefieldsRoute = express.Router()
 
 prefieldsRoute.get("/", getAllPrefields);
-prefieldsRoute.get("/getData", getDataByCode);
+prefieldsRoute.post("/getData", getDataByCode);
 export default prefieldsRoute

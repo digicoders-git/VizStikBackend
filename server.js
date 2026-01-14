@@ -9,6 +9,8 @@ import empRoute from './routes/employee.routes.js';
 import shopRoute from './routes/shop.routes.js';
 import prefieldsRoute from './routes/prefield.routes.js';
 import outletRoute from './routes/outlet.routes.js';
+import branchRoute from './routes/branch.routes.js';
+import subAdminRoute from './routes/subAdmin.route.js';
 dotenv.config()
 
 const app = express()
@@ -31,6 +33,8 @@ app.use('/employee',empRoute)
 app.use('/shop',shopRoute)
 app.use('/prefields',prefieldsRoute)
 app.use('/outlets',outletRoute)
+app.use('/branch',branchRoute)
+app.use('/subAdmin',subAdminRoute)
 
 
 // 404 handler
