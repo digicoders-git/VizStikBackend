@@ -47,3 +47,7 @@ export const getAllData = async (req, res) => {
     });
   }
 };
+
+export const getData = async (req,res) => {
+  
+}

@@ -1,6 +1,7 @@
 import Employee from "../model/employee.model.js";
 import generateToken from "../config/token.js";
 import cloudinary from "../config/cloudinary.js";
+import ExcelJS from "exceljs";
 import { sendOtpSms } from "../utils/sendSms.js";
 import Shop from "../model/shop.model.js";
 import Prefield from "../model/prefield.model.js";
@@ -34,7 +35,7 @@ function isValidIndianMobile(number) {
 ========================= */
 export const createEmployee = async (req, res) => {
   try {
-    const { name, email, password,state,city,area, phone, designation } = req.body;
+    const { name, email, password, state, city, area, phone, designation } = req.body;
 
     // Required fields check
     if (!name || !email || !password) {
@@ -291,7 +292,7 @@ export const getEmployeeById = async (req, res) => {
 ========================= */
 export const updateEmployee = async (req, res) => {
   try {
-    const { name, phone, designation,state,city,area, isActive, password } = req.body;
+    const { name, phone, designation, state, city, area, isActive, password } = req.body;
 
     const employee = await Employee.findById(req.params.id);
     if (!employee) {
@@ -503,11 +504,11 @@ export const forgetEmployeePassword = async (req, res) => {
 // };
 
 /* =========================
-   GET EMPLOYEE WITH SHOPS
+   GET EMPLOYEE WITH OUTLETS
 ========================= */
-export const getEmployeeWithShops = async (req, res) => {
+export const getEmployeeWithOutlets = async (req, res) => {
   try {
-    const employee = await Employee.getWithShops(req.params.id);
+    const employee = await Employee.getWithOutlets(req.params.id);
 
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
@@ -858,5 +859,177 @@ export const verifyOtpAndLogin = async (req, res) => {
   } catch (error) {
     console.error("Verify OTP Error:", error);
     res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+
+
+// for Admin 
+
+// controllers/employee.controller.js
+
+export const getAllEmployeesAdmin = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      Branch,
+      Govt_District,
+      City,
+      typeOfDs,
+      isActive,
+      isVerified,
+      fromDate,
+      toDate,
+      Circle_AM,
+      Section_AE
+    } = req.query;
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    let query = {};
+
+    /* ========================
+       🔎 GLOBAL SEARCH
+    ======================== */
+    if (search) {
+      query.$or = [
+        { dsName: { $regex: search, $options: "i" } },
+        { dsMobile: { $regex: search, $options: "i" } },
+        { WD_Code: { $regex: search, $options: "i" } },
+        { Branch: { $regex: search, $options: "i" } },
+        { City: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    /* ========================
+       🧭 FILTERS
+    ======================== */
+    if (Branch) query.Branch = Branch;
+    if (Govt_District) query.Govt_District = Govt_District;
+    if (City) query.City = City;
+    if (typeOfDs) query.typeOfDs = typeOfDs;
+    if (Circle_AM) query.Circle_AM = Circle_AM;
+    if (Section_AE) query.Section_AE = Section_AE;
+
+    if (isActive !== undefined) query.isActive = isActive === "true";
+    if (isVerified !== undefined) query.isVerified = isVerified === "true";
+
+    /* ========================
+       📅 DATE FILTER
+    ======================== */
+    if (fromDate || toDate) {
+      query.createdAt = {};
+      if (fromDate) query.createdAt.$gte = new Date(fromDate);
+      if (toDate) query.createdAt.$lte = new Date(toDate);
+    }
+
+    /* ========================
+       🔢 COUNT
+    ======================== */
+    const total = await Employee.countDocuments(query);
+
+    /* ========================
+       📦 FETCH DATA WITH FULL SHOP DATA
+    ======================== */
+    const employees = await Employee.find(query)
+      .populate({
+        path: "addedShops",
+      })
+      .populate({
+        path: "addedOutlet",
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    return res.status(200).json({
+      success: true,
+      message: "Employees with shops fetched successfully",
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / limit)
+      },
+      data: employees
+    });
+
+  } catch (error) {
+    console.error("Get employees error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
+/* =========================
+   DOWNLOAD EMPLOYEES EXCEL
+========================= */
+export const downloadEmployeesExcel = async (req, res) => {
+  try {
+    const { role, Branch, Circle_AM, Section_AE } = req.query;
+    let query = {};
+    if (Branch) {
+      query.Branch = Branch;
+    }
+    if (Circle_AM) {
+      query.Circle_AM = Circle_AM;
+    }
+    if (Section_AE) {
+      query.Section_AE = Section_AE;
+    }
+
+    const employees = await Employee.find(query).sort({ createdAt: -1 });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Employees");
+
+    worksheet.columns = [
+      { header: "Sr.", key: "sr", width: 10 },
+      { header: "Employee Name", key: "dsName", width: 25 },
+      { header: "WD Code", key: "WD_Code", width: 15 },
+      { header: "Mobile", key: "dsMobile", width: 15 },
+      { header: "Branch", key: "Branch", width: 20 },
+      { header: "City", key: "City", width: 20 },
+      { header: "Type", key: "typeOfDs", width: 15 },
+      { header: "Active", key: "isActive", width: 10 },
+      { header: "Total Outlets", key: "totalOutlets", width: 15 },
+      { header: "Created At", key: "createdAt", width: 20 },
+    ];
+
+    employees.forEach((emp, index) => {
+      worksheet.addRow({
+        sr: index + 1,
+        dsName: emp.dsName,
+        WD_Code: emp.WD_Code,
+        dsMobile: emp.dsMobile,
+        Branch: emp.Branch,
+        City: emp.City,
+        typeOfDs: emp.typeOfDs,
+        isActive: emp.isActive ? "Yes" : "No",
+        totalOutlets: emp.addedOutlet?.length || 0,
+        createdAt: new Date(emp.createdAt).toLocaleString("en-IN"),
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=" + "Employees_Data.xlsx"
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Download Employees Excel error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

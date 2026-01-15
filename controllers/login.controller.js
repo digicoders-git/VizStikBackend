@@ -46,18 +46,18 @@ export const createLoginUser = async (req, res) => {
   }
 };
 
-export const loginUser = async (req,res) => {
+export const loginUser = async (req, res) => {
   try {
     const { name, password } = req.body;
     if (!name || !password) {
-      return res.status(400).json({message:"Please Enter All Fields"})
+      return res.status(400).json({ message: "Please Enter All Fields" })
     }
-    const user = await Login.findOne({name})
+    const user = await Login.findOne({ name })
     if (!user) {
-      return res.status(400).json({message:"User Not Found"})
+      return res.status(400).json({ message: "User Not Found" })
     }
-    if(user.password !== password){
-      return res.status(400).json({message:"Incorrect Password"})
+    if (user.password !== password) {
+      return res.status(400).json({ message: "Incorrect Password" })
     }
     let token;
     try {
@@ -68,14 +68,65 @@ export const loginUser = async (req,res) => {
     return res.status(200).json({
       name: user.name,
       password: user.password,
+      id: user._id,
       role: user.role,
       token
     })
   } catch (error) {
-    console.error("Create Login User Error:", error);
+    console.error("Login User Error:", error);
     res.status(500).json({
       success: false,
       message: "Server Error"
     });
   }
 }
+
+/* =========================
+   UPDATE PASSWORD
+========================= */
+export const updateLoginPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Old and new password are required"
+      });
+    }
+
+    const user = await Login.findById(id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Check old password
+    if (user.password !== oldPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect old password"
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully"
+    });
+
+  } catch (error) {
+    console.error("Update Password Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};
