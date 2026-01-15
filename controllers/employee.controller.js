@@ -899,19 +899,21 @@ export const getAllEmployeesAdmin = async (req, res) => {
         { dsMobile: { $regex: search, $options: "i" } },
         { WD_Code: { $regex: search, $options: "i" } },
         { Branch: { $regex: search, $options: "i" } },
-        { City: { $regex: search, $options: "i" } }
+        { City: { $regex: search, $options: "i" } },
+        { Circle_AM: { $regex: search, $options: "i" } },
+        { Section_AE: { $regex: search, $options: "i" } }
       ];
     }
 
     /* ========================
        🧭 FILTERS
     ======================== */
-    if (Branch) query.Branch = Branch;
+    if (Branch) query.Branch = { $regex: Branch, $options: "i" };
     if (Govt_District) query.Govt_District = Govt_District;
     if (City) query.City = City;
     if (typeOfDs) query.typeOfDs = typeOfDs;
-    if (Circle_AM) query.Circle_AM = Circle_AM;
-    if (Section_AE) query.Section_AE = Section_AE;
+    if (Circle_AM) query.Circle_AM = { $regex: Circle_AM, $options: "i" };
+    if (Section_AE) query.Section_AE = { $regex: Section_AE, $options: "i" };
 
     if (isActive !== undefined) query.isActive = isActive === "true";
     if (isVerified !== undefined) query.isVerified = isVerified === "true";
@@ -973,13 +975,13 @@ export const downloadEmployeesExcel = async (req, res) => {
     const { role, Branch, Circle_AM, Section_AE } = req.query;
     let query = {};
     if (Branch) {
-      query.Branch = Branch;
+      query.Branch = { $regex: Branch, $options: "i" };
     }
     if (Circle_AM) {
-      query.Circle_AM = Circle_AM;
+      query.Circle_AM = { $regex: Circle_AM, $options: "i" };
     }
     if (Section_AE) {
-      query.Section_AE = Section_AE;
+      query.Section_AE = { $regex: Section_AE, $options: "i" };
     }
 
     const employees = await Employee.find(query).sort({ createdAt: -1 });

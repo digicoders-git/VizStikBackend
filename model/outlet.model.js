@@ -7,6 +7,9 @@ const outletSchema = new mongoose.Schema({
   outletMobile: {
     type: String
   },
+  outletName: {
+    type: String
+  },
   location: {
     latitude: {
       type: Number,

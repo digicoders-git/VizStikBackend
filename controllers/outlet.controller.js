@@ -13,7 +13,7 @@ import cloudinary from "../config/cloudinary.js";
 ========================= */
 export const createOutlet = async (req, res) => {
   try {
-    const { activity, outletMobile, latitude, longitude } = req.body;
+    const { activity, outletMobile,outletName, latitude, longitude } = req.body;
 
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
@@ -46,6 +46,7 @@ export const createOutlet = async (req, res) => {
     const outlet = await Outlet.create({
       activity,
       outletMobile,
+      outletName,
       location: {
         latitude: Number(latitude),
         longitude: Number(longitude)
@@ -329,19 +330,19 @@ export const getAllOutletsAdmin = async (req, res) => {
        🏢 FILTER BY BRANCH (Via Employee)
     ======================== */
     if (Branch) {
-      const employeesInBranch = await Employee.find({ Branch }).select("_id");
+      const employeesInBranch = await Employee.find({ Branch: { $regex: Branch, $options: "i" } }).select("_id");
       const employeeIds = employeesInBranch.map(emp => emp._id);
       query.createdBy = { $in: employeeIds };
     }
 
     if (Circle_AM) {
-      const employeesInCircle = await Employee.find({ Circle_AM }).select("_id");
+      const employeesInCircle = await Employee.find({ Circle_AM: { $regex: Circle_AM, $options: "i" } }).select("_id");
       const employeeIds = employeesInCircle.map(emp => emp._id);
       query.createdBy = { $in: employeeIds };
     }
 
     if (Section_AE) {
-      const employeesInSection = await Employee.find({ Section_AE }).select("_id");
+      const employeesInSection = await Employee.find({ Section_AE: { $regex: Section_AE, $options: "i" } }).select("_id");
       const employeeIds = employeesInSection.map(emp => emp._id);
       query.createdBy = { $in: employeeIds };
     }
@@ -402,19 +403,19 @@ export const downloadOutletsExcel = async (req, res) => {
     }
 
     if (Branch) {
-      const employeesInBranch = await Employee.find({ Branch }).select("_id");
+      const employeesInBranch = await Employee.find({ Branch: { $regex: Branch, $options: "i" } }).select("_id");
       const employeeIds = employeesInBranch.map(emp => emp._id);
       query.createdBy = { $in: employeeIds };
     }
 
     if (Circle_AM) {
-      const employeesInCircle = await Employee.find({ Circle_AM }).select("_id");
+      const employeesInCircle = await Employee.find({ Circle_AM: { $regex: Circle_AM, $options: "i" } }).select("_id");
       const employeeIds = employeesInCircle.map(emp => emp._id);
       query.createdBy = { $in: employeeIds };
     }
 
     if (Section_AE) {
-      const employeesInSection = await Employee.find({ Section_AE }).select("_id");
+      const employeesInSection = await Employee.find({ Section_AE: { $regex: Section_AE, $options: "i" } }).select("_id");
       const employeeIds = employeesInSection.map(emp => emp._id);
       query.createdBy = { $in: employeeIds };
     }

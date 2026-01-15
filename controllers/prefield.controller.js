@@ -31,11 +31,15 @@ export const getAllPrefieldsAdmin = async (req, res) => {
     const { page = 1, limit = 10, search = "", Branch = "", Circle_AM = "", Section_AE = "" } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
+    // DEBUG LOGS
+    console.log('=== PREFIELD REQUEST ===');
+    console.log('Query params:', { Branch, Circle_AM, Section_AE, search, page, limit });
+
     let query = {};
 
-    if (Branch) query.Branch = Branch;
-    if (Circle_AM) query.Circle_AM = Circle_AM;
-    if (Section_AE) query.Section_AE = Section_AE;
+    if (Branch) query.Branch = { $regex: Branch, $options: "i" };
+    if (Circle_AM) query.Circle_AM = { $regex: Circle_AM, $options: "i" };
+    if (Section_AE) query.Section_AE = { $regex: Section_AE, $options: "i" };
 
     if (search) {
       const searchRegex = new RegExp(search, "i");
@@ -50,18 +54,23 @@ export const getAllPrefieldsAdmin = async (req, res) => {
       if (!Section_AE) searchConditions.push({ Section_AE: searchRegex });
 
       query.$and = [
-        ...(Branch ? [{ Branch }] : []),
-        ...(Circle_AM ? [{ Circle_AM }] : []),
-        ...(Section_AE ? [{ Section_AE }] : []),
+        ...(Branch ? [{ Branch: { $regex: Branch, $options: "i" } }] : []),
+        ...(Circle_AM ? [{ Circle_AM: { $regex: Circle_AM, $options: "i" } }] : []),
+        ...(Section_AE ? [{ Section_AE: { $regex: Section_AE, $options: "i" } }] : []),
         { $or: searchConditions }
       ];
     }
+
+    console.log('MongoDB Query:', JSON.stringify(query, null, 2));
 
     const total = await Prefield.countDocuments(query);
     const data = await Prefield.find(query)
       .sort({ WD_Code: 1 })
       .skip(skip)
       .limit(Number(limit));
+
+    console.log('Results found:', total);
+    console.log('======================\n');
 
     res.status(200).json({
       success: true,
@@ -91,9 +100,9 @@ export const downloadPrefieldsExcel = async (req, res) => {
   try {
     const { Branch, Circle_AM, Section_AE } = req.query;
     let query = {};
-    if (Branch) query.Branch = Branch;
-    if (Circle_AM) query.Circle_AM = Circle_AM;
-    if (Section_AE) query.Section_AE = Section_AE;
+    if (Branch) query.Branch = { $regex: Branch, $options: "i" };
+    if (Circle_AM) query.Circle_AM = { $regex: Circle_AM, $options: "i" };
+    if (Section_AE) query.Section_AE = { $regex: Section_AE, $options: "i" };
     const data = await Prefield.find(query).sort({ WD_Code: 1 });
 
     const workbook = new ExcelJS.Workbook();
