@@ -22,10 +22,10 @@ export const createOutlet = async (req, res) => {
       });
     }
 
-    if (req.files.length < 1 || req.files.length > 8) {
+    if (req.files.length < 1 || req.files.length > 15) {
       return res.status(400).json({
         success: false,
-        message: "Minimum 1 and maximum 8 images allowed"
+        message: "Minimum 1 and maximum 15 images allowed"
       });
     }
 
