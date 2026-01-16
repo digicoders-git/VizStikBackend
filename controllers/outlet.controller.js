@@ -13,7 +13,7 @@ import cloudinary from "../config/cloudinary.js";
 ========================= */
 export const createOutlet = async (req, res) => {
   try {
-    const { activity, outletMobile,outletName, latitude, longitude } = req.body;
+    const { activity, outletMobile, outletName, latitude, longitude } = req.body;
 
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
@@ -34,7 +34,10 @@ export const createOutlet = async (req, res) => {
 
     for (const file of req.files) {
       const upload = await cloudinary.uploader.upload(file.path, {
-        folder: "outlets"
+        folder: "outlets",
+        quality: 50,        // 👈 50% quality
+        fetch_format: "auto",
+        flags: "lossy"
       });
 
       outletImages.push({
@@ -160,7 +163,7 @@ export const updateOutlet = async (req, res) => {
 
     // if new images uploaded
     if (req.files && req.files.length > 0) {
-      if (req.files.length < 1 || req.files.length > 8) {
+      if (req.files.length < 1 || req.files.length > 15) {
         return res.status(400).json({
           success: false,
           message: "Minimum 1 and maximum 8 images allowed"
