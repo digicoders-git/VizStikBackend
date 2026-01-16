@@ -19,7 +19,7 @@ outletRoute.get("/dashboard", employeeAuth, getOutletDashboardStats);
 outletRoute.post(
   "/create",
   employeeAuth,
-  upload.array("outletImages", 8),
+  upload.array("outletImages", 15),
   createOutlet
 );
 
