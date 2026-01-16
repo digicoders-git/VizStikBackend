@@ -1,6 +1,5 @@
 import Employee from "../model/employee.model.js";
 import generateToken from "../config/token.js";
-import cloudinary from "../config/cloudinary.js";
 import ExcelJS from "exceljs";
 import { sendOtpSms } from "../utils/sendSms.js";
 import Shop from "../model/shop.model.js";
@@ -90,26 +89,16 @@ export const createEmployee = async (req, res) => {
     // Upload profile photo (optional)
     let profilePhoto = { url: "", public_id: "" };
 
-    if (req.file) {
-      // const upload = await cloudinary.uploader.upload(req.file.path, {
-      //   folder: "employees"
-      // });
+    // 🔥 Image Compression
+    await compressImage(req.file.path, 50);
 
-      // profilePhoto = {
-      //   url: upload.secure_url,
-      //   public_id: upload.public_id
-      // };
+    const filename = req.file.filename;
+    const localPath = `uploads/employees/profiles/${filename}`;
 
-      const localPath = req.file.path.replace(/\\/g, "/");
-
-      // 🔥 Image Compression
-      await compressImage(req.file.path, 50);
-
-      profilePhoto = {
-        url: `${req.protocol}://${req.get("host")}/${localPath}`,
-        public_id: localPath
-      };
-    }
+    profilePhoto = {
+      url: `${req.protocol}://${req.get("host")}/${localPath}`,
+      public_id: localPath
+    };
 
     const employee = await Employee.create({
       name,
@@ -339,28 +328,11 @@ export const updateEmployee = async (req, res) => {
     /* ================= PROFILE PHOTO UPDATE ================= */
 
     if (req.file) {
-      // 1️⃣ Delete old image from Cloudinary
-      // if (employee.profilePhoto?.public_id) {
-      //   await cloudinary.uploader.destroy(
-      //     employee.profilePhoto.public_id
-      //   );
-      // }
-
-      // 2️⃣ Upload new image
-      // const upload = await cloudinary.uploader.upload(req.file.path, {
-      //   folder: "employees"
-      // });
-
-      // 3️⃣ Save new image
-      // employee.profilePhoto = {
-      //   url: upload.secure_url,
-      //   public_id: upload.public_id
-      // };
-
-      const localPath = req.file.path.replace(/\\/g, "/");
-
       // 🔥 Image Compression
       await compressImage(req.file.path, 50);
+
+      const filename = req.file.filename;
+      const localPath = `uploads/employees/profiles/${filename}`;
 
       employee.profilePhoto = {
         url: `${req.protocol}://${req.get("host")}/${localPath}`,

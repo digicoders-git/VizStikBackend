@@ -1,7 +1,6 @@
 import generateToken from "../config/token.js"
 import Admin from "../model/admin.models.js"
 import bcrypt from 'bcryptjs'
-import cloudinary from '../config/cloudinary.js'
 import { compressImage } from "../utils/imageResizer.js";
 
 
@@ -18,15 +17,11 @@ export const create = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10)
     let profilePhotoUrl = "";
     if (req.file) {
-      // const img = await cloudinary.uploader.upload(req.file.path, {
-      //   folder: "admin_profiles"
-      // })
-      // profilePhotoUrl = img.secure_url;
-
-      const localPath = req.file.path.replace(/\\/g, "/");
-
       // 🔥 Image Compression
       await compressImage(req.file.path, 50);
+
+      const filename = req.file.filename;
+      const localPath = `uploads/admin/profiles/${filename}`;
 
       profilePhotoUrl = `${req.protocol}://${req.get("host")}/${localPath}`;
     }
@@ -119,15 +114,11 @@ export const updateAdmin = async (req, res) => {
 
     // Update profile photo if provided
     if (req.file) {
-      // const img = await cloudinary.uploader.upload(req.file.path, {
-      //   folder: "admin_profiles"
-      // });
-      // admin.profilePhoto = img.secure_url;
-
-      const localPath = req.file.path.replace(/\\/g, "/");
-
       // 🔥 Image Compression
       await compressImage(req.file.path, 50);
+
+      const filename = req.file.filename;
+      const localPath = `uploads/admin/profiles/${filename}`;
 
       admin.profilePhoto = `${req.protocol}://${req.get("host")}/${localPath}`;
     }

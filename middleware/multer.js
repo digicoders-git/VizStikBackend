@@ -1,25 +1,29 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    let folder = "uploads/";
+    let folder = path.join(__dirname, "..", "uploads");
 
     if (file.fieldname === "ownerImage") {
-      folder += "shops/owner";
+      folder = path.join(folder, "shops", "owner");
     } else if (file.fieldname === "shopImages") {
-      folder += "shops/images";
+      folder = path.join(folder, "shops", "images");
     } else if (file.fieldname === "profilePhoto") {
       if (req.originalUrl.includes("admin")) {
-        folder += "admin/profiles";
+        folder = path.join(folder, "admin", "profiles");
       } else {
-        folder += "employees/profiles";
+        folder = path.join(folder, "employees", "profiles");
       }
     } else if (file.fieldname === "outletImages") {
-      folder += "outlets";
+      folder = path.join(folder, "outlets");
     } else {
-      folder += "others";
+      folder = path.join(folder, "others");
     }
 
     if (!fs.existsSync(folder)) {

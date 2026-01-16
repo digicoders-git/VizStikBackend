@@ -1,0 +1,224 @@
+﻿[dotenv@17.2.3] injecting env (8) from .env -- tip: ≡ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+Connected to DB
+Last 5 Outlets:
+{
+  "location": {
+    "latitude": 26.9046631,
+    "longitude": 80.9496308
+  },
+  "_id": "696a3adeb27165ef17789654",
+  "activity": "Capstan Clove",
+  "outletImages": [
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569563274-404285379.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569563274-404285379.jpg",
+      "_id": "696a3adeb27165ef17789655"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569563275-94659265.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569563275-94659265.jpg",
+      "_id": "696a3adeb27165ef17789656"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569563276-150450629.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569563276-150450629.jpg",
+      "_id": "696a3adeb27165ef17789657"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569563277-755380511.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569563277-755380511.jpg",
+      "_id": "696a3adeb27165ef17789658"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569563277-829608107.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569563277-829608107.jpg",
+      "_id": "696a3adeb27165ef17789659"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569563278-18257149.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569563278-18257149.jpg",
+      "_id": "696a3adeb27165ef1778965a"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569563278-259103128.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569563278-259103128.jpg",
+      "_id": "696a3adeb27165ef1778965b"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569563278-473740846.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569563278-473740846.jpg",
+      "_id": "696a3adeb27165ef1778965c"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569563279-163999566.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569563279-163999566.jpg",
+      "_id": "696a3adeb27165ef1778965d"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569563283-987232050.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569563283-987232050.jpg",
+      "_id": "696a3adeb27165ef1778965e"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569563284-482619605.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569563284-482619605.jpg",
+      "_id": "696a3adeb27165ef1778965f"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569563284-938477929.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569563284-938477929.jpg",
+      "_id": "696a3adeb27165ef17789660"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569563284-123533318.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569563284-123533318.jpg",
+      "_id": "696a3adeb27165ef17789661"
+    }
+  ],
+  "createdBy": "6968f712b7188d7daa2878e7",
+  "createdAt": "2026-01-16T13:19:26.293Z",
+  "updatedAt": "2026-01-16T13:19:26.293Z",
+  "__v": 0
+}
+{
+  "location": {
+    "latitude": 26.9124,
+    "longitude": 75.7873
+  },
+  "_id": "696a3a96b27165ef17789596",
+  "activity": "Retail Shop",
+  "outletMobile": "9876543210",
+  "outletImages": [
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569491222-993199006.png",
+      "public_id": "uploads/outlets/outletImages-1768569491222-993199006.png",
+      "_id": "696a3a96b27165ef17789597"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569491287-32846672.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569491287-32846672.jpg",
+      "_id": "696a3a96b27165ef17789598"
+    }
+  ],
+  "createdBy": "6968beaf8f0de78fe968e1ef",
+  "createdAt": "2026-01-16T13:18:14.387Z",
+  "updatedAt": "2026-01-16T13:18:14.387Z",
+  "__v": 0
+}
+{
+  "location": {
+    "latitude": 26.9124,
+    "longitude": 75.7873
+  },
+  "_id": "696a3a352e123c06dc0d238a",
+  "activity": "Retail Shop",
+  "outletMobile": "9876543210",
+  "outletImages": [
+    {
+      "url": "http://localhost:3800/uploads/outlets/outletImages-1768569395497-111364907.png",
+      "public_id": "uploads/outlets/outletImages-1768569395497-111364907.png",
+      "_id": "696a3a352e123c06dc0d238b"
+    },
+    {
+      "url": "http://localhost:3800/uploads/outlets/outletImages-1768569395518-796472803.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569395518-796472803.jpg",
+      "_id": "696a3a352e123c06dc0d238c"
+    }
+  ],
+  "createdBy": "6968beaf8f0de78fe968e1ef",
+  "createdAt": "2026-01-16T13:16:37.781Z",
+  "updatedAt": "2026-01-16T13:16:37.781Z",
+  "__v": 0
+}
+{
+  "location": {
+    "latitude": 26.9046603,
+    "longitude": 80.949618
+  },
+  "_id": "696a39bbb27165ef177891ea",
+  "activity": "Social 2-Pod",
+  "outletMobile": "6393430456",
+  "outletName": "nikhil ",
+  "outletImages": [
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569273783-356535797.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569273783-356535797.jpg",
+      "_id": "696a39bbb27165ef177891eb"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569273783-822533459.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569273783-822533459.jpg",
+      "_id": "696a39bbb27165ef177891ec"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569273783-948538122.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569273783-948538122.jpg",
+      "_id": "696a39bbb27165ef177891ed"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768569273841-174659139.jpg",
+      "public_id": "uploads/outlets/outletImages-1768569273841-174659139.jpg",
+      "_id": "696a39bbb27165ef177891ee"
+    }
+  ],
+  "createdBy": "6968beaf8f0de78fe968e1ef",
+  "createdAt": "2026-01-16T13:14:35.194Z",
+  "updatedAt": "2026-01-16T13:14:35.194Z",
+  "__v": 0
+}
+{
+  "location": {
+    "latitude": 26.9046678,
+    "longitude": 80.9496272
+  },
+  "_id": "696a389e611d3e95ff77ddda",
+  "activity": "GF Indiemint",
+  "outletMobile": "9305963958",
+  "outletName": "ajay",
+  "outletImages": [
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768568989324-803861000.jpg",
+      "public_id": "uploads/outlets/outletImages-1768568989324-803861000.jpg",
+      "_id": "696a389e611d3e95ff77dddb"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768568989632-316531208.jpg",
+      "public_id": "uploads/outlets/outletImages-1768568989632-316531208.jpg",
+      "_id": "696a389e611d3e95ff77dddc"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768568989685-866338045.jpg",
+      "public_id": "uploads/outlets/outletImages-1768568989685-866338045.jpg",
+      "_id": "696a389e611d3e95ff77dddd"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768568989704-254946685.jpg",
+      "public_id": "uploads/outlets/outletImages-1768568989704-254946685.jpg",
+      "_id": "696a389e611d3e95ff77ddde"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768568989719-146912661.jpg",
+      "public_id": "uploads/outlets/outletImages-1768568989719-146912661.jpg",
+      "_id": "696a389e611d3e95ff77dddf"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768568989886-234710973.jpg",
+      "public_id": "uploads/outlets/outletImages-1768568989886-234710973.jpg",
+      "_id": "696a389e611d3e95ff77dde0"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768568989984-877692696.jpg",
+      "public_id": "uploads/outlets/outletImages-1768568989984-877692696.jpg",
+      "_id": "696a389e611d3e95ff77dde1"
+    },
+    {
+      "url": "http://vizstikbackend.onrender.com/uploads/outlets/outletImages-1768568990087-303325601.jpg",
+      "public_id": "uploads/outlets/outletImages-1768568990087-303325601.jpg",
+      "_id": "696a389e611d3e95ff77dde2"
+    }
+  ],
+  "createdBy": "6968beaf8f0de78fe968e1ef",
+  "createdAt": "2026-01-16T13:09:50.189Z",
+  "updatedAt": "2026-01-16T13:09:50.189Z",
+  "__v": 0
+}

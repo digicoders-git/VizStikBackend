@@ -1,5 +1,4 @@
 import Shop from "../model/shop.model.js";
-import cloudinary from "../config/cloudinary.js";
 import Employee from "../model/employee.model.js";
 import { compressImage } from "../utils/imageResizer.js";
 
@@ -95,20 +94,11 @@ export const createShop = async (req, res) => {
     let ownerImage = { url: "", public_id: "" };
 
     if (req.files?.ownerImage?.[0]) {
-      // const upload = await cloudinary.uploader.upload(
-      //   req.files.ownerImage[0].path,
-      //   { folder: "shops/owner" }
-      // );
-
-      // ownerImage = {
-      //   url: upload.secure_url,
-      //   public_id: upload.public_id
-      // };
-
-      const localPath = req.files.ownerImage[0].path.replace(/\\/g, "/");
-
       // 🔥 Image Compression
       await compressImage(req.files.ownerImage[0].path, 50);
+
+      const filename = req.files.ownerImage[0].filename;
+      const localPath = `uploads/shops/owner/${filename}`;
 
       ownerImage = {
         url: `${req.protocol}://${req.get("host")}/${localPath}`,
@@ -127,19 +117,11 @@ export const createShop = async (req, res) => {
       }
 
       for (const file of req.files.shopImages) {
-        // const upload = await cloudinary.uploader.upload(file.path, {
-        //   folder: "shops/images"
-        // });
-
-        // shopImages.push({
-        //   url: upload.secure_url,
-        //   public_id: upload.public_id
-        // });
-
-        const localPath = file.path.replace(/\\/g, "/");
-
         // 🔥 Image Compression
         await compressImage(file.path, 50);
+
+        const filename = file.filename;
+        const localPath = `uploads/shops/images/${filename}`;
 
         shopImages.push({
           url: `${req.protocol}://${req.get("host")}/${localPath}`,

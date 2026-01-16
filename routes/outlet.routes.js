@@ -7,11 +7,13 @@ import {
   deleteOutlet,
   getOutletDashboardStats,
   getAllOutletsAdmin,
-  downloadOutletsExcel
+  downloadOutletsExcel,
+  deleteOutletAdmin
 } from "../controllers/outlet.controller.js";
 
 import employeeAuth from "../middleware/employeeAuth.js";
 import upload from "../middleware/multer.js";
+import { verifyAdminToken } from "../middleware/verifyAdminToken.js";
 
 const outletRoute = express.Router();
 
@@ -38,5 +40,6 @@ outletRoute.get("/", employeeAuth, getMyOutlets);
 //admin
 outletRoute.get("/admin/all", getAllOutletsAdmin);
 outletRoute.get("/admin/download", downloadOutletsExcel);
+outletRoute.delete("/admin/delete/:id", verifyAdminToken, deleteOutletAdmin);
 
 export default outletRoute;

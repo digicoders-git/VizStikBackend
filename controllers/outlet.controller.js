@@ -6,12 +6,6 @@ import { compressImage } from "../utils/imageResizer.js";
 /* =========================
    CREATE OUTLET
 ========================= */
-// import Outlet from "../model/outlet.model.js";
-import cloudinary from "../config/cloudinary.js";
-
-/* =========================
-   CREATE OUTLET
-========================= */
 export const createOutlet = async (req, res) => {
   try {
     const { activity, outletMobile, outletName, latitude, longitude } = req.body;
@@ -30,26 +24,14 @@ export const createOutlet = async (req, res) => {
       });
     }
 
-    // ✅ Upload images to Cloudinary
     const outletImages = [];
 
     for (const file of req.files) {
-      // const upload = await cloudinary.uploader.upload(file.path, {
-      //   folder: "outlets",
-      //   quality: 50,        // 👈 50% quality
-      //   fetch_format: "auto",
-      //   flags: "lossy"
-      // });
-
-      // outletImages.push({
-      //   url: upload.secure_url,
-      //   public_id: upload.public_id
-      // });
-
-      const localPath = file.path.replace(/\\/g, "/");
-
       // 🔥 Image Compression
       await compressImage(file.path, 50);
+
+      const filename = file.filename;
+      const localPath = `uploads/outlets/${filename}`;
 
       outletImages.push({
         url: `${req.protocol}://${req.get("host")}/${localPath}`,
@@ -183,10 +165,11 @@ export const updateOutlet = async (req, res) => {
 
       const images = [];
       for (const file of req.files) {
-        const localPath = file.path.replace(/\\/g, "/");
-
         // 🔥 Image Compression
         await compressImage(file.path, 50);
+
+        const filename = file.filename;
+        const localPath = `uploads/outlets/${filename}`;
 
         images.push({
           url: `${req.protocol}://${req.get("host")}/${localPath}`,
@@ -239,6 +222,35 @@ export const deleteOutlet = async (req, res) => {
     res.json({
       success: true,
       message: "Outlet deleted"
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};
+
+/* =========================
+   DELETE OUTLET (ADMIN)
+========================= */
+export const deleteOutletAdmin = async (req, res) => {
+  try {
+    const outlet = await Outlet.findById(req.params.id);
+
+    if (!outlet) {
+      return res.status(404).json({
+        success: false,
+        message: "Outlet not found"
+      });
+    }
+
+    await outlet.deleteOne();
+
+    res.json({
+      success: true,
+      message: "Outlet deleted successfully"
     });
 
   } catch (error) {
