@@ -730,6 +730,13 @@ export const registerOrUpdateEmployee = async (req, res) => {
     // 2️⃣ Check existing employee by WD_Code
     let employee = await Employee.findOne({ WD_Code });
 
+
+    if (!employee.isActive) {
+      return res.status(403).json({
+        message: "Your account is disabled. Contact admin."
+      });
+    }
+
     // 3️⃣ Check mobile used by another WD
     const mobileUsed = await Employee.findOne({
       dsMobile,

@@ -130,3 +130,39 @@ export const updateLoginPassword = async (req, res) => {
     });
   }
 };
+
+/* =========================
+   UPDATE USER (Name + Password)
+========================= */
+export const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, password } = req.body;
+
+    const user = await Login.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    if (name) user.name = name;
+    if (password) user.password = password;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: user
+    });
+
+  } catch (error) {
+    console.error("Update User Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};
