@@ -17,10 +17,13 @@ export const create = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10)
     let profilePhotoUrl = "";
     if (req.file) {
-      const img = await cloudinary.uploader.upload(req.file.path, {
-        folder: "admin_profiles"
-      })
-      profilePhotoUrl = img.secure_url;
+      // const img = await cloudinary.uploader.upload(req.file.path, {
+      //   folder: "admin_profiles"
+      // })
+      // profilePhotoUrl = img.secure_url;
+
+      const localPath = req.file.path.replace(/\\/g, "/");
+      profilePhotoUrl = `${req.protocol}://${req.get("host")}/${localPath}`;
     }
 
     const admin = await Admin.create({
@@ -111,10 +114,13 @@ export const updateAdmin = async (req, res) => {
 
     // Update profile photo if provided
     if (req.file) {
-      const img = await cloudinary.uploader.upload(req.file.path, {
-        folder: "admin_profiles"
-      });
-      admin.profilePhoto = img.secure_url;
+      // const img = await cloudinary.uploader.upload(req.file.path, {
+      //   folder: "admin_profiles"
+      // });
+      // admin.profilePhoto = img.secure_url;
+
+      const localPath = req.file.path.replace(/\\/g, "/");
+      admin.profilePhoto = `${req.protocol}://${req.get("host")}/${localPath}`;
     }
 
     await admin.save();

@@ -33,16 +33,22 @@ export const createOutlet = async (req, res) => {
     const outletImages = [];
 
     for (const file of req.files) {
-      const upload = await cloudinary.uploader.upload(file.path, {
-        folder: "outlets",
-        quality: 50,        // 👈 50% quality
-        fetch_format: "auto",
-        flags: "lossy"
-      });
+      // const upload = await cloudinary.uploader.upload(file.path, {
+      //   folder: "outlets",
+      //   quality: 50,        // 👈 50% quality
+      //   fetch_format: "auto",
+      //   flags: "lossy"
+      // });
 
+      // outletImages.push({
+      //   url: upload.secure_url,
+      //   public_id: upload.public_id
+      // });
+
+      const localPath = file.path.replace(/\\/g, "/");
       outletImages.push({
-        url: upload.secure_url,
-        public_id: upload.public_id
+        url: `${req.protocol}://${req.get("host")}/${localPath}`,
+        public_id: localPath
       });
     }
 
@@ -170,10 +176,13 @@ export const updateOutlet = async (req, res) => {
         });
       }
 
-      outlet.outletImages = req.files.map(file => ({
-        url: file.path,
-        public_id: file.filename
-      }));
+      outlet.outletImages = req.files.map(file => {
+        const localPath = file.path.replace(/\\/g, "/");
+        return {
+          url: `${req.protocol}://${req.get("host")}/${localPath}`,
+          public_id: localPath
+        };
+      });
     }
 
     await outlet.save();

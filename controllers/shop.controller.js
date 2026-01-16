@@ -94,14 +94,20 @@ export const createShop = async (req, res) => {
     let ownerImage = { url: "", public_id: "" };
 
     if (req.files?.ownerImage?.[0]) {
-      const upload = await cloudinary.uploader.upload(
-        req.files.ownerImage[0].path,
-        { folder: "shops/owner" }
-      );
+      // const upload = await cloudinary.uploader.upload(
+      //   req.files.ownerImage[0].path,
+      //   { folder: "shops/owner" }
+      // );
 
+      // ownerImage = {
+      //   url: upload.secure_url,
+      //   public_id: upload.public_id
+      // };
+
+      const localPath = req.files.ownerImage[0].path.replace(/\\/g, "/");
       ownerImage = {
-        url: upload.secure_url,
-        public_id: upload.public_id
+        url: `${req.protocol}://${req.get("host")}/${localPath}`,
+        public_id: localPath
       };
     }
 
@@ -116,13 +122,19 @@ export const createShop = async (req, res) => {
       }
 
       for (const file of req.files.shopImages) {
-        const upload = await cloudinary.uploader.upload(file.path, {
-          folder: "shops/images"
-        });
+        // const upload = await cloudinary.uploader.upload(file.path, {
+        //   folder: "shops/images"
+        // });
 
+        // shopImages.push({
+        //   url: upload.secure_url,
+        //   public_id: upload.public_id
+        // });
+
+        const localPath = file.path.replace(/\\/g, "/");
         shopImages.push({
-          url: upload.secure_url,
-          public_id: upload.public_id
+          url: `${req.protocol}://${req.get("host")}/${localPath}`,
+          public_id: localPath
         });
       }
     }
@@ -356,14 +368,14 @@ export const deleteShop = async (req, res) => {
     // }
 
     // 🔥 delete owner image
-    if (shop.ownerImage?.public_id) {
-      await cloudinary.uploader.destroy(shop.ownerImage.public_id);
-    }
+    // if (shop.ownerImage?.public_id) {
+    //   await cloudinary.uploader.destroy(shop.ownerImage.public_id);
+    // }
 
     // 🔥 delete shop images
-    for (const img of shop.shopImages) {
-      await cloudinary.uploader.destroy(img.public_id);
-    }
+    // for (const img of shop.shopImages) {
+    //   await cloudinary.uploader.destroy(img.public_id);
+    // }
 
     await shop.deleteOne();
 

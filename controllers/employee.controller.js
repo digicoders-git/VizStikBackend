@@ -90,13 +90,19 @@ export const createEmployee = async (req, res) => {
     let profilePhoto = { url: "", public_id: "" };
 
     if (req.file) {
-      const upload = await cloudinary.uploader.upload(req.file.path, {
-        folder: "employees"
-      });
+      // const upload = await cloudinary.uploader.upload(req.file.path, {
+      //   folder: "employees"
+      // });
 
+      // profilePhoto = {
+      //   url: upload.secure_url,
+      //   public_id: upload.public_id
+      // };
+
+      const localPath = req.file.path.replace(/\\/g, "/");
       profilePhoto = {
-        url: upload.secure_url,
-        public_id: upload.public_id
+        url: `${req.protocol}://${req.get("host")}/${localPath}`,
+        public_id: localPath
       };
     }
 
@@ -329,21 +335,27 @@ export const updateEmployee = async (req, res) => {
 
     if (req.file) {
       // 1️⃣ Delete old image from Cloudinary
-      if (employee.profilePhoto?.public_id) {
-        await cloudinary.uploader.destroy(
-          employee.profilePhoto.public_id
-        );
-      }
+      // if (employee.profilePhoto?.public_id) {
+      //   await cloudinary.uploader.destroy(
+      //     employee.profilePhoto.public_id
+      //   );
+      // }
 
       // 2️⃣ Upload new image
-      const upload = await cloudinary.uploader.upload(req.file.path, {
-        folder: "employees"
-      });
+      // const upload = await cloudinary.uploader.upload(req.file.path, {
+      //   folder: "employees"
+      // });
 
       // 3️⃣ Save new image
+      // employee.profilePhoto = {
+      //   url: upload.secure_url,
+      //   public_id: upload.public_id
+      // };
+
+      const localPath = req.file.path.replace(/\\/g, "/");
       employee.profilePhoto = {
-        url: upload.secure_url,
-        public_id: upload.public_id
+        url: `${req.protocol}://${req.get("host")}/${localPath}`,
+        public_id: localPath
       };
     }
 
@@ -375,11 +387,11 @@ export const deleteEmployee = async (req, res) => {
     }
 
     // 🔥 Delete image from Cloudinary
-    if (employee.profilePhoto?.public_id) {
-      await cloudinary.uploader.destroy(
-        employee.profilePhoto.public_id
-      );
-    }
+    // if (employee.profilePhoto?.public_id) {
+    //   await cloudinary.uploader.destroy(
+    //     employee.profilePhoto.public_id
+    //   );
+    // }
 
     // Delete employee from DB
     await employee.deleteOne();

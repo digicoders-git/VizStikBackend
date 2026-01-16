@@ -1,4 +1,5 @@
 import express from 'express'
+import path from 'path';
 import connectDB from './config/db.js';
 import fs from "fs";
 import helmet from 'helmet';
@@ -26,17 +27,18 @@ app.use(
 // Body parsers
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 await connectDB();
 
-app.use('/admin',adminRoute)
-app.use('/employee',empRoute)
-app.use('/shop',shopRoute)
-app.use('/prefields',prefieldsRoute)
-app.use('/outlets',outletRoute)
-app.use('/branch',branchRoute)
-app.use('/subAdmin',subAdminRoute)
-app.use('/admins',loginRoute)
+app.use('/admin', adminRoute)
+app.use('/employee', empRoute)
+app.use('/shop', shopRoute)
+app.use('/prefields', prefieldsRoute)
+app.use('/outlets', outletRoute)
+app.use('/branch', branchRoute)
+app.use('/subAdmin', subAdminRoute)
+app.use('/admins', loginRoute)
 
 
 // 404 handler
