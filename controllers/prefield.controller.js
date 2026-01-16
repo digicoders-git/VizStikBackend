@@ -32,8 +32,8 @@ export const getAllPrefieldsAdmin = async (req, res) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     // DEBUG LOGS
-    console.log('=== PREFIELD REQUEST ===');
-    console.log('Query params:', { Branch, Circle_AM, Section_AE, search, page, limit });
+    // console.log('=== PREFIELD REQUEST ===');
+    // console.log('Query params:', { Branch, Circle_AM, Section_AE, search, page, limit });
 
     let query = {};
 

@@ -530,7 +530,7 @@ export const updateEmployeeIsActive = async (req, res) => {
 
     const isBlockedUser = await Employee.findOneAndUpdate({ _id: id }, { isActive: !user.isActive }, { new: true })
     // console.log(isBlockedUser)
-    return res.status(201).json({ message: isBlockedUser.isActive ? "Employee blocked" : "Employee unblocked", isBlockedUser })
+    return res.status(201).json({ message: isBlockedUser.isActive ? "Employee unblocked" : "Employee blocked", isBlockedUser })
 
   } catch (error) {
     return res.status(500).json({ message: "Inernal Server Error", error: error.message })
@@ -722,9 +722,10 @@ export const registerOrUpdateEmployee = async (req, res) => {
 
     // 2️⃣ Check existing employee by WD_Code
     let employee = await Employee.findOne({ WD_Code });
+    console.log(employee);
 
 
-    if (!employee.isActive) {
+    if (employee && !employee.isActive) {
       return res.status(403).json({
         message: "Your account is disabled. Contact admin."
       });
@@ -798,6 +799,7 @@ export const registerOrUpdateEmployee = async (req, res) => {
 
     // 5️⃣ Send OTP
     const smsSent = await sendOtpSms(dsMobile, otp);
+    console.log(dsMobile, otp)
     if (!smsSent) {
       return res.status(500).json({ success: false, message: "OTP Not Sent" });
     }
