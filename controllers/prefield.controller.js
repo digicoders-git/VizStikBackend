@@ -156,7 +156,7 @@ export const downloadPrefieldsExcel = async (req, res) => {
 
 export const getDataByCode = async (req, res) => {
   try {
-    const { WD_Code } = req.body;
+    let { WD_Code } = req.body;
 
     let query = {};
 
