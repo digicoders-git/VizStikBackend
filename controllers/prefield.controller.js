@@ -161,6 +161,7 @@ export const getDataByCode = async (req, res) => {
     let query = {};
 
     if (WD_Code) {
+      WD_Code = WD_Code.toString().trim().toUpperCase();
       query.WD_Code = WD_Code;
     }
 
