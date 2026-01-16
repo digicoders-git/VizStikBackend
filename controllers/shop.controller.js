@@ -1,6 +1,7 @@
 import Shop from "../model/shop.model.js";
 import cloudinary from "../config/cloudinary.js";
 import Employee from "../model/employee.model.js";
+import { compressImage } from "../utils/imageResizer.js";
 
 
 function isValidIndianMobile(number) {
@@ -105,6 +106,10 @@ export const createShop = async (req, res) => {
       // };
 
       const localPath = req.files.ownerImage[0].path.replace(/\\/g, "/");
+
+      // 🔥 Image Compression
+      await compressImage(req.files.ownerImage[0].path, 50);
+
       ownerImage = {
         url: `${req.protocol}://${req.get("host")}/${localPath}`,
         public_id: localPath
@@ -132,6 +137,10 @@ export const createShop = async (req, res) => {
         // });
 
         const localPath = file.path.replace(/\\/g, "/");
+
+        // 🔥 Image Compression
+        await compressImage(file.path, 50);
+
         shopImages.push({
           url: `${req.protocol}://${req.get("host")}/${localPath}`,
           public_id: localPath

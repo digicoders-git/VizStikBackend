@@ -2,6 +2,7 @@ import generateToken from "../config/token.js"
 import Admin from "../model/admin.models.js"
 import bcrypt from 'bcryptjs'
 import cloudinary from '../config/cloudinary.js'
+import { compressImage } from "../utils/imageResizer.js";
 
 
 export const create = async (req, res) => {
@@ -23,6 +24,10 @@ export const create = async (req, res) => {
       // profilePhotoUrl = img.secure_url;
 
       const localPath = req.file.path.replace(/\\/g, "/");
+
+      // 🔥 Image Compression
+      await compressImage(req.file.path, 50);
+
       profilePhotoUrl = `${req.protocol}://${req.get("host")}/${localPath}`;
     }
 
@@ -120,6 +125,10 @@ export const updateAdmin = async (req, res) => {
       // admin.profilePhoto = img.secure_url;
 
       const localPath = req.file.path.replace(/\\/g, "/");
+
+      // 🔥 Image Compression
+      await compressImage(req.file.path, 50);
+
       admin.profilePhoto = `${req.protocol}://${req.get("host")}/${localPath}`;
     }
 

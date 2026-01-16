@@ -1,6 +1,7 @@
 import Outlet from "../model/outlet.model.js";
 import Employee from "../model/employee.model.js";
 import ExcelJS from "exceljs";
+import { compressImage } from "../utils/imageResizer.js";
 
 /* =========================
    CREATE OUTLET
@@ -46,6 +47,10 @@ export const createOutlet = async (req, res) => {
       // });
 
       const localPath = file.path.replace(/\\/g, "/");
+
+      // 🔥 Image Compression
+      await compressImage(file.path, 50);
+
       outletImages.push({
         url: `${req.protocol}://${req.get("host")}/${localPath}`,
         public_id: localPath
@@ -176,13 +181,19 @@ export const updateOutlet = async (req, res) => {
         });
       }
 
-      outlet.outletImages = req.files.map(file => {
+      const images = [];
+      for (const file of req.files) {
         const localPath = file.path.replace(/\\/g, "/");
-        return {
+
+        // 🔥 Image Compression
+        await compressImage(file.path, 50);
+
+        images.push({
           url: `${req.protocol}://${req.get("host")}/${localPath}`,
           public_id: localPath
-        };
-      });
+        });
+      }
+      outlet.outletImages = images;
     }
 
     await outlet.save();

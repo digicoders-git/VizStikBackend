@@ -5,6 +5,7 @@ import ExcelJS from "exceljs";
 import { sendOtpSms } from "../utils/sendSms.js";
 import Shop from "../model/shop.model.js";
 import Prefield from "../model/prefield.model.js";
+import { compressImage } from "../utils/imageResizer.js";
 
 
 function isValidIndianMobile(number) {
@@ -100,6 +101,10 @@ export const createEmployee = async (req, res) => {
       // };
 
       const localPath = req.file.path.replace(/\\/g, "/");
+
+      // 🔥 Image Compression
+      await compressImage(req.file.path, 50);
+
       profilePhoto = {
         url: `${req.protocol}://${req.get("host")}/${localPath}`,
         public_id: localPath
@@ -353,6 +358,10 @@ export const updateEmployee = async (req, res) => {
       // };
 
       const localPath = req.file.path.replace(/\\/g, "/");
+
+      // 🔥 Image Compression
+      await compressImage(req.file.path, 50);
+
       employee.profilePhoto = {
         url: `${req.protocol}://${req.get("host")}/${localPath}`,
         public_id: localPath
