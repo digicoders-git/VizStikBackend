@@ -691,9 +691,6 @@ export const getStats = async (req, res) => {
     });
   }
 };
-
-
-
 // ===================================================
 
 const generateOTP = () => {
