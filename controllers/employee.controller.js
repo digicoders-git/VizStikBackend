@@ -717,49 +717,33 @@ export const registerOrUpdateEmployee = async (req, res) => {
     // 1️⃣ Check WD_Code exists
     const validWD = await Prefield.findOne({ WD_Code });
     if (!validWD) {
-      return res.status(400).json({ success: false, message: "WD code is wrong" });
-    }
-
-    // 2️⃣ Check existing employee by WD_Code
-    let employee = await Employee.findOne({ WD_Code });
-    console.log(employee);
-
-
-    if (employee && !employee.isActive) {
-      return res.status(403).json({
-        message: "Your account is disabled. Contact admin."
-      });
-    }
-
-    // 3️⃣ Check mobile used by another WD
-    const mobileUsed = await Employee.findOne({
-      dsMobile,
-      WD_Code: { $ne: WD_Code }
-    });
-
-    if (mobileUsed) {
       return res.status(400).json({
         success: false,
-        message: "This mobile number is already registered with another WD Code"
+        message: "WD code is wrong"
       });
     }
 
-    // 4️⃣ Generate OTP
+    // 2️⃣ Find ANY employee by WD_Code
+    let employee = await Employee.findOne({ WD_Code }).sort({ createdAt: -1 });
+
+    // 3️⃣ Generate OTP
     const otp = generateOTP();
     const otpExpire = new Date(Date.now() + 5 * 60 * 1000);
 
     // ===============================
-    // CASE 1: WD exists
+    // CASE 1: WD exists → UPDATE mobile
     // ===============================
     if (employee) {
-      // if (employee.dsMobile !== dsMobile) {
-      //   return res.status(400).json({
-      //     success: false,
-      //     message: "Invalid mobile number for this WD Code"
-      //   });
-      // }
+      if (!employee.isActive) {
+        return res.status(403).json({
+          message: "Your account is disabled. Contact admin."
+        });
+      }
 
-      // ❗ DO NOT UPDATE REAL DATA YET
+      // 🔥 UPDATE MOBILE NUMBER
+      employee.dsMobile = dsMobile;
+
+      // ❗ Do not update main data yet
       employee.otp = otp;
       employee.otpExpire = otpExpire;
       employee.tempData = {
@@ -776,7 +760,7 @@ export const registerOrUpdateEmployee = async (req, res) => {
     }
 
     // ===============================
-    // CASE 2: New WD → Create TEMP record only
+    // CASE 2: WD not found → Create new
     // ===============================
     else {
       employee = await Employee.create({
@@ -785,6 +769,7 @@ export const registerOrUpdateEmployee = async (req, res) => {
         otp,
         otpExpire,
         isVerified: false,
+        isActive: true,
         tempData: {
           Branch,
           Govt_District,
@@ -797,24 +782,32 @@ export const registerOrUpdateEmployee = async (req, res) => {
       });
     }
 
-    // 5️⃣ Send OTP
+    // 4️⃣ Send OTP
     const smsSent = await sendOtpSms(dsMobile, otp);
-    console.log(dsMobile, otp)
+    console.log("OTP:", dsMobile, otp);
+
     if (!smsSent) {
-      return res.status(500).json({ success: false, message: "OTP Not Sent" });
+      return res.status(500).json({
+        success: false,
+        message: "OTP Not Sent"
+      });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: `OTP sent to ${dsMobile}`,
-      tempEmployeeId: employee._id
+      employeeId: employee._id
     });
 
   } catch (error) {
     console.error("Register Employee Error:", error);
-    res.status(500).json({ success: false, message: "Server Error" });
+    return res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
   }
 };
+
 
 
 
@@ -824,6 +817,7 @@ export const verifyOtpAndLogin = async (req, res) => {
     const { dsMobile, otp } = req.body;
 
     const employee = await Employee.findOne({ dsMobile });
+    console.log(employee)
     if (!employee) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
