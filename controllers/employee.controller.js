@@ -752,12 +752,12 @@ export const registerOrUpdateEmployee = async (req, res) => {
     // CASE 1: WD exists
     // ===============================
     if (employee) {
-      if (employee.dsMobile !== dsMobile) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid mobile number for this WD Code"
-        });
-      }
+      // if (employee.dsMobile !== dsMobile) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: "Invalid mobile number for this WD Code"
+      //   });
+      // }
 
       // ❗ DO NOT UPDATE REAL DATA YET
       employee.otp = otp;
