@@ -720,6 +720,19 @@ export const registerOrUpdateEmployee = async (req, res) => {
       });
     }
 
+    // 🔥 1.5️⃣ CHECK: Mobile already registered with another WD?
+    const mobileUsed = await Employee.findOne({
+      dsMobile,
+      WD_Code: { $ne: WD_Code }
+    });
+
+    if (mobileUsed) {
+      return res.status(400).json({
+        success: false,
+        message: `Your mobile number already registered with WD Code: ${mobileUsed.WD_Code}`
+      });
+    }
+
     // 2️⃣ Find ANY employee by WD_Code
     let employee = await Employee.findOne({ WD_Code }).sort({ createdAt: -1 });
 
@@ -781,7 +794,7 @@ export const registerOrUpdateEmployee = async (req, res) => {
 
     // 4️⃣ Send OTP
     const smsSent = await sendOtpSms(dsMobile, otp);
-    console.log("OTP:", dsMobile, otp);
+    // console.log("OTP:", dsMobile, otp);
 
     if (!smsSent) {
       return res.status(500).json({
@@ -809,12 +822,13 @@ export const registerOrUpdateEmployee = async (req, res) => {
 
 
 
+
 export const verifyOtpAndLogin = async (req, res) => {
   try {
     const { dsMobile, otp } = req.body;
 
     const employee = await Employee.findOne({ dsMobile });
-    console.log(employee)
+    // console.log(employee)
     if (!employee) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
