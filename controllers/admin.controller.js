@@ -2,6 +2,7 @@ import generateToken from "../config/token.js"
 import Admin from "../model/admin.models.js"
 import bcrypt from 'bcryptjs'
 import { compressImage } from "../utils/imageResizer.js";
+import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 
 
 export const create = async (req, res) => {
@@ -15,22 +16,31 @@ export const create = async (req, res) => {
       return res.status(400).json({ message: "User already Exist !" })
     }
     const hashedPassword = await bcrypt.hash(password, 10)
-    let profilePhotoUrl = "";
+    let profilePhoto = { url: "", public_id: "" };
     if (req.file) {
       // 🔥 Image Compression
       await compressImage(req.file.path, 50);
 
-      const filename = req.file.filename;
-      const localPath = `uploads/admin/profiles/${filename}`;
+      // const filename = req.file.filename;
+      // const localPath = `uploads/admin/profiles/${filename}`;
 
-      profilePhotoUrl = `${req.protocol}://${req.get("host")}/${localPath}`;
+      // profilePhotoUrl = `${req.protocol}://${req.get("host")}/${localPath}`;
+
+      // 🔥 Cloudinary Upload
+      const result = await uploadOnCloudinary(req.file.path, "admin/profiles");
+      if (result) {
+        profilePhoto = {
+          url: result.url,
+          public_id: result.public_id
+        };
+      }
     }
 
     const admin = await Admin.create({
       name,
       email,
       password: hashedPassword,
-      profilePhoto: profilePhotoUrl
+      profilePhoto: profilePhoto
     })
     return res.status(201).json({ message: "Admin created", admin })
   } catch (error) {
@@ -62,7 +72,7 @@ export const login = async (req, res) => {
     return res.status(200).json({
       email: existAdmin.email,
       password: existAdmin.password,
-      profilePhoto: existAdmin.profilePhoto,
+      profilePhoto: existAdmin.profilePhoto?.url || "",
       token
     })
   } catch (error) {
@@ -86,6 +96,11 @@ export const deleteAdmin = async (req, res) => {
 
     if (!deletedAdmin) {
       return res.status(404).json({ message: "Admin not found" });
+    }
+
+    // 🔥 Delete old from Cloudinary if possible
+    if (deletedAdmin.profilePhoto?.public_id) {
+      await deleteFromCloudinary(deletedAdmin.profilePhoto.public_id);
     }
 
     return res.status(200).json({ message: "Admin deleted successfully", deletedAdmin });
@@ -117,10 +132,19 @@ export const updateAdmin = async (req, res) => {
       // 🔥 Image Compression
       await compressImage(req.file.path, 50);
 
-      const filename = req.file.filename;
-      const localPath = `uploads/admin/profiles/${filename}`;
+      // const filename = req.file.filename;
+      // const localPath = `uploads/admin/profiles/${filename}`;
 
-      admin.profilePhoto = `${req.protocol}://${req.get("host")}/${localPath}`;
+      // admin.profilePhoto = `${req.protocol}://${req.get("host")}/${localPath}`;
+
+      // 🔥 Cloudinary Upload
+      const result = await uploadOnCloudinary(req.file.path, "admin/profiles");
+      if (result) {
+        admin.profilePhoto = {
+          url: result.url,
+          public_id: result.public_id
+        };
+      }
     }
 
     await admin.save();

@@ -10,8 +10,14 @@ const adminSchema = new mongoose.Schema({
     required: true
   },
   profilePhoto: {
-    type: String,
-    default: ""
+    url: {
+      type: String,
+      default: ""
+    },
+    public_id: {
+      type: String,
+      default: ""
+    }
   },
   password: {
     type: String,

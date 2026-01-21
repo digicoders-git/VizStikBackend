@@ -5,6 +5,7 @@ import { sendOtpSms } from "../utils/sendSms.js";
 import Shop from "../model/shop.model.js";
 import Prefield from "../model/prefield.model.js";
 import { compressImage } from "../utils/imageResizer.js";
+import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 
 
 function isValidIndianMobile(number) {
@@ -92,13 +93,22 @@ export const createEmployee = async (req, res) => {
     // 🔥 Image Compression
     await compressImage(req.file.path, 50);
 
-    const filename = req.file.filename;
-    const localPath = `uploads/employees/profiles/${filename}`;
+    // const filename = req.file.filename;
+    // const localPath = `uploads/employees/profiles/${filename}`;
 
-    profilePhoto = {
-      url: `${req.protocol}://${req.get("host")}/${localPath}`,
-      public_id: localPath
-    };
+    // profilePhoto = {
+    //   url: `${req.protocol}://${req.get("host")}/${localPath}`,
+    //   public_id: localPath
+    // };
+
+    // 🔥 Cloudinary Upload
+    const result = await uploadOnCloudinary(req.file.path, "employees/profiles");
+    if (result) {
+      profilePhoto = {
+        url: result.url,
+        public_id: result.public_id
+      };
+    }
 
     const employee = await Employee.create({
       name,
@@ -331,13 +341,22 @@ export const updateEmployee = async (req, res) => {
       // 🔥 Image Compression
       await compressImage(req.file.path, 50);
 
-      const filename = req.file.filename;
-      const localPath = `uploads/employees/profiles/${filename}`;
+      // const filename = req.file.filename;
+      // const localPath = `uploads/employees/profiles/${filename}`;
 
-      employee.profilePhoto = {
-        url: `${req.protocol}://${req.get("host")}/${localPath}`,
-        public_id: localPath
-      };
+      // employee.profilePhoto = {
+      //   url: `${req.protocol}://${req.get("host")}/${localPath}`,
+      //   public_id: localPath
+      // };
+
+      // 🔥 Cloudinary Upload
+      const result = await uploadOnCloudinary(req.file.path, "employees/profiles");
+      if (result) {
+        employee.profilePhoto = {
+          url: result.url,
+          public_id: result.public_id
+        };
+      }
     }
 
     await employee.save();
@@ -368,11 +387,11 @@ export const deleteEmployee = async (req, res) => {
     }
 
     // 🔥 Delete image from Cloudinary
-    // if (employee.profilePhoto?.public_id) {
-    //   await cloudinary.uploader.destroy(
-    //     employee.profilePhoto.public_id
-    //   );
-    // }
+    if (employee.profilePhoto?.public_id) {
+      await deleteFromCloudinary(
+        employee.profilePhoto.public_id
+      );
+    }
 
     // Delete employee from DB
     await employee.deleteOne();

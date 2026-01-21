@@ -1,6 +1,7 @@
 import Shop from "../model/shop.model.js";
 import Employee from "../model/employee.model.js";
 import { compressImage } from "../utils/imageResizer.js";
+import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 
 
 function isValidIndianMobile(number) {
@@ -97,13 +98,22 @@ export const createShop = async (req, res) => {
       // 🔥 Image Compression
       await compressImage(req.files.ownerImage[0].path, 50);
 
-      const filename = req.files.ownerImage[0].filename;
-      const localPath = `uploads/shops/owner/${filename}`;
+      // const filename = req.files.ownerImage[0].filename;
+      // const localPath = `uploads/shops/owner/${filename}`;
 
-      ownerImage = {
-        url: `${req.protocol}://${req.get("host")}/${localPath}`,
-        public_id: localPath
-      };
+      // ownerImage = {
+      //   url: `${req.protocol}://${req.get("host")}/${localPath}`,
+      //   public_id: localPath
+      // };
+
+      // 🔥 Cloudinary Upload
+      const result = await uploadOnCloudinary(req.files.ownerImage[0].path, "shops/owner");
+      if (result) {
+        ownerImage = {
+          url: result.url,
+          public_id: result.public_id
+        };
+      }
     }
 
     /* ================= SHOP IMAGES (MAX 2) ================= */
@@ -120,13 +130,22 @@ export const createShop = async (req, res) => {
         // 🔥 Image Compression
         await compressImage(file.path, 50);
 
-        const filename = file.filename;
-        const localPath = `uploads/shops/images/${filename}`;
+        // const filename = file.filename;
+        // const localPath = `uploads/shops/images/${filename}`;
 
-        shopImages.push({
-          url: `${req.protocol}://${req.get("host")}/${localPath}`,
-          public_id: localPath
-        });
+        // shopImages.push({
+        //   url: `${req.protocol}://${req.get("host")}/${localPath}`,
+        //   public_id: localPath
+        // });
+
+        // 🔥 Cloudinary Upload
+        const result = await uploadOnCloudinary(file.path, "shops/images");
+        if (result) {
+          shopImages.push({
+            url: result.url,
+            public_id: result.public_id
+          });
+        }
       }
     }
 
@@ -359,13 +378,24 @@ export const deleteShop = async (req, res) => {
     // }
 
     // 🔥 delete owner image
+    // 🔥 delete owner image
+    if (shop.ownerImage?.public_id) {
+      await deleteFromCloudinary(shop.ownerImage.public_id);
+    }
+
+    // 🔥 delete shop images
+    for (const img of shop.shopImages) {
+      await deleteFromCloudinary(img.public_id);
+    }
+
     // if (shop.ownerImage?.public_id) {
     //   await cloudinary.uploader.destroy(shop.ownerImage.public_id);
     // }
 
-    // 🔥 delete shop images
-    // for (const img of shop.shopImages) {
-    //   await cloudinary.uploader.destroy(img.public_id);
+    // if (shop.shopImages) {
+    //   for (const img of shop.shopImages) {
+    //     await cloudinary.uploader.destroy(img.public_id);
+    //   }
     // }
 
     await shop.deleteOne();

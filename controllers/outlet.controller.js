@@ -2,6 +2,7 @@ import Outlet from "../model/outlet.model.js";
 import Employee from "../model/employee.model.js";
 import ExcelJS from "exceljs";
 import { compressImage } from "../utils/imageResizer.js";
+import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 
 /* =========================
    CREATE OUTLET
@@ -30,13 +31,22 @@ export const createOutlet = async (req, res) => {
       // 🔥 Image Compression
       await compressImage(file.path, 50);
 
-      const filename = file.filename;
-      const localPath = `uploads/outlets/${filename}`;
+      // const filename = file.filename;
+      // const localPath = `uploads/outlets/${filename}`;
 
-      outletImages.push({
-        url: `${req.protocol}://${req.get("host")}/${localPath}`,
-        public_id: localPath
-      });
+      // outletImages.push({
+      //   url: `${req.protocol}://${req.get("host")}/${localPath}`,
+      //   public_id: localPath
+      // });
+
+      // 🔥 Cloudinary Upload
+      const result = await uploadOnCloudinary(file.path, "outlets");
+      if (result) {
+        outletImages.push({
+          url: result.url,
+          public_id: result.public_id
+        });
+      }
     }
 
     const outlet = await Outlet.create({
@@ -168,13 +178,22 @@ export const updateOutlet = async (req, res) => {
         // 🔥 Image Compression
         await compressImage(file.path, 50);
 
-        const filename = file.filename;
-        const localPath = `uploads/outlets/${filename}`;
+        // const filename = file.filename;
+        // const localPath = `uploads/outlets/${filename}`;
 
-        images.push({
-          url: `${req.protocol}://${req.get("host")}/${localPath}`,
-          public_id: localPath
-        });
+        // images.push({
+        //   url: `${req.protocol}://${req.get("host")}/${localPath}`,
+        //   public_id: localPath
+        // });
+
+        // 🔥 Cloudinary Upload
+        const result = await uploadOnCloudinary(file.path, "outlets");
+        if (result) {
+          images.push({
+            url: result.url,
+            public_id: result.public_id
+          });
+        }
       }
       outlet.outletImages = images;
     }
@@ -217,6 +236,15 @@ export const deleteOutlet = async (req, res) => {
       });
     }
 
+    // 🔥 Delete images from Cloudinary
+    if (outlet.outletImages && outlet.outletImages.length > 0) {
+      for (const img of outlet.outletImages) {
+        if (img.public_id) {
+          await deleteFromCloudinary(img.public_id);
+        }
+      }
+    }
+
     await outlet.deleteOne();
 
     res.json({
@@ -244,6 +272,15 @@ export const deleteOutletAdmin = async (req, res) => {
         success: false,
         message: "Outlet not found"
       });
+    }
+
+    // 🔥 Delete images from Cloudinary
+    if (outlet.outletImages && outlet.outletImages.length > 0) {
+      for (const img of outlet.outletImages) {
+        if (img.public_id) {
+          await deleteFromCloudinary(img.public_id);
+        }
+      }
     }
 
     await outlet.deleteOne();
