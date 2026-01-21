@@ -400,7 +400,7 @@ export const getAllOutletsAdmin = async (req, res) => {
        📦 FETCH DATA
     ======================== */
     const outlets = await Outlet.find(query)
-      .populate("createdBy", "dsName dsMobile WD_Code typeOfDs")
+      .populate("createdBy", "dsName dsMobile WD_Code typeOfDs Branch Govt_District Circle_AM Section_AE City")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit));
