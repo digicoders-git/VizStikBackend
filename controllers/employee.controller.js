@@ -711,7 +711,7 @@ export const registerOrUpdateEmployee = async (req, res) => {
       dsMobile
     } = req.body;
 
-    // 1️⃣ Check WD_Code exists
+    // 1️⃣ Check WD_Code valid or not
     const validWD = await Prefield.findOne({ WD_Code });
     if (!validWD) {
       return res.status(400).json({
@@ -720,7 +720,7 @@ export const registerOrUpdateEmployee = async (req, res) => {
       });
     }
 
-    // 🔥 1.5️⃣ CHECK: Mobile already registered with another WD?
+    // 2️⃣ Check: Mobile already registered with DIFFERENT WD?
     const mobileUsed = await Employee.findOne({
       dsMobile,
       WD_Code: { $ne: WD_Code }
@@ -733,15 +733,15 @@ export const registerOrUpdateEmployee = async (req, res) => {
       });
     }
 
-    // 2️⃣ Find ANY employee by WD_Code
-    let employee = await Employee.findOne({ WD_Code }).sort({ createdAt: -1 });
+    // 3️⃣ Find employee by MOBILE (not by WD_Code)
+    let employee = await Employee.findOne({ dsMobile });
 
-    // 3️⃣ Generate OTP
+    // 4️⃣ Generate OTP
     const otp = generateOTP();
     const otpExpire = new Date(Date.now() + 5 * 60 * 1000);
 
     // ===============================
-    // CASE 1: WD exists → UPDATE mobile
+    // CASE 1: Mobile already exists → UPDATE same employee
     // ===============================
     if (employee) {
       if (!employee.isActive) {
@@ -750,10 +750,8 @@ export const registerOrUpdateEmployee = async (req, res) => {
         });
       }
 
-      // 🔥 UPDATE MOBILE NUMBER
-      employee.dsMobile = dsMobile;
-
-      // ❗ Do not update main data yet
+      // Update WD & temp data (if user is re-registering)
+      employee.WD_Code = WD_Code;
       employee.otp = otp;
       employee.otpExpire = otpExpire;
       employee.tempData = {
@@ -770,7 +768,7 @@ export const registerOrUpdateEmployee = async (req, res) => {
     }
 
     // ===============================
-    // CASE 2: WD not found → Create new
+    // CASE 2: Mobile NOT exists → CREATE new employee
     // ===============================
     else {
       employee = await Employee.create({
@@ -792,9 +790,9 @@ export const registerOrUpdateEmployee = async (req, res) => {
       });
     }
 
-    // 4️⃣ Send OTP
+    // 5️⃣ Send OTP
     const smsSent = await sendOtpSms(dsMobile, otp);
-    // console.log("OTP:", dsMobile, otp);
+    console.log(`OTP ${otp} sent to ${dsMobile}`);
 
     if (!smsSent) {
       return res.status(500).json({
@@ -817,7 +815,6 @@ export const registerOrUpdateEmployee = async (req, res) => {
     });
   }
 };
-
 
 
 

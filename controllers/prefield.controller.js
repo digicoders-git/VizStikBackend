@@ -61,7 +61,7 @@ export const getAllPrefieldsAdmin = async (req, res) => {
       ];
     }
 
-    console.log('MongoDB Query:', JSON.stringify(query, null, 2));
+    // console.log('MongoDB Query:', JSON.stringify(query, null, 2));
 
     const total = await Prefield.countDocuments(query);
     const data = await Prefield.find(query)
@@ -69,8 +69,8 @@ export const getAllPrefieldsAdmin = async (req, res) => {
       .skip(skip)
       .limit(Number(limit));
 
-    console.log('Results found:', total);
-    console.log('======================\n');
+    // console.log('Results found:', total);
+    // console.log('======================\n');
 
     res.status(200).json({
       success: true,

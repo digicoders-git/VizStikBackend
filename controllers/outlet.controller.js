@@ -330,7 +330,7 @@ export const getAllOutletsAdmin = async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 100000000,
+      limit = 1000000000909090909900909,
       search,
       employeeId,
       Branch,
@@ -432,85 +432,153 @@ export const getAllOutletsAdmin = async (req, res) => {
 export const downloadOutletsExcel = async (req, res) => {
   try {
     const { employeeId, Branch, Circle_AM, Section_AE } = req.query;
+
     let query = {};
+
+    // ===============================
+    // 1️⃣ FILTER BY EMPLOYEE
+    // ===============================
     if (employeeId) {
       query.createdBy = employeeId;
     }
 
+    // ===============================
+    // 2️⃣ FILTER BY BRANCH
+    // ===============================
     if (Branch) {
-      const employeesInBranch = await Employee.find({ Branch: { $regex: Branch, $options: "i" } }).select("_id");
-      const employeeIds = employeesInBranch.map(emp => emp._id);
+      const employees = await Employee.find({
+        Branch: { $regex: Branch, $options: "i" }
+      }).select("_id");
+
+      const employeeIds = employees.map(e => e._id);
       query.createdBy = { $in: employeeIds };
     }
 
+    // ===============================
+    // 3️⃣ FILTER BY CIRCLE
+    // ===============================
     if (Circle_AM) {
-      const employeesInCircle = await Employee.find({ Circle_AM: { $regex: Circle_AM, $options: "i" } }).select("_id");
-      const employeeIds = employeesInCircle.map(emp => emp._id);
+      const employees = await Employee.find({
+        Circle_AM: { $regex: Circle_AM, $options: "i" }
+      }).select("_id");
+
+      const employeeIds = employees.map(e => e._id);
       query.createdBy = { $in: employeeIds };
     }
 
+    // ===============================
+    // 4️⃣ FILTER BY SECTION
+    // ===============================
     if (Section_AE) {
-      const employeesInSection = await Employee.find({ Section_AE: { $regex: Section_AE, $options: "i" } }).select("_id");
-      const employeeIds = employeesInSection.map(emp => emp._id);
+      const employees = await Employee.find({
+        Section_AE: { $regex: Section_AE, $options: "i" }
+      }).select("_id");
+
+      const employeeIds = employees.map(e => e._id);
       query.createdBy = { $in: employeeIds };
     }
 
+    // ===============================
+    // 5️⃣ FETCH OUTLETS WITH FULL EMPLOYEE DATA
+    // ===============================
     const outlets = await Outlet.find(query)
-      .populate("createdBy", "dsName WD_Code")
-      .sort({ createdAt: -1 });
+      .populate("createdBy") // 👈 FULL employee data
+      .sort({ createdAt: -1 })
+      .lean();
 
+    // ===============================
+    // 6️⃣ CREATE EXCEL
+    // ===============================
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Outlets");
 
     worksheet.columns = [
-      { header: "Sr.", key: "sr", width: 10 },
+      { header: "Sr.", key: "sr", width: 8 },
       { header: "Activity", key: "activity", width: 25 },
-      { header: "Outlet Mobile", key: "outletMobile", width: 20 },
+      { header: "Outlet Mobile", key: "outletMobile", width: 18 },
+
+      // ===== EMPLOYEE DATA =====
       { header: "Employee Name", key: "employeeName", width: 25 },
+      { header: "Employee Mobile", key: "employeeMobile", width: 20 },
       { header: "WD Code", key: "wdCode", width: 15 },
+      { header: "Branch", key: "branch", width: 20 },
+      { header: "Govt District", key: "govtDistrict", width: 20 },
+      { header: "Circle AM", key: "circleAM", width: 20 },
+      { header: "Section AE", key: "sectionAE", width: 20 },
+      { header: "City", key: "city", width: 20 },
+      { header: "DS Type", key: "dsType", width: 15 },
+
+      // ===== LOCATION =====
       { header: "Latitude", key: "latitude", width: 15 },
       { header: "Longitude", key: "longitude", width: 15 },
-      { header: "Created At", key: "createdAt", width: 20 },
-      { header: "Image URL", key: "imageUrl", width: 50 },
+
+      // ===== META =====
+      { header: "Created At", key: "createdAt", width: 22 },
+      { header: "Image URL", key: "imageUrl", width: 50 }
     ];
 
+    // ===============================
+    // 7️⃣ FILL ROWS
+    // ===============================
     outlets.forEach((outlet, index) => {
+      const emp = outlet.createdBy || {};
       const imageUrl = outlet.outletImages?.[0]?.url || "";
+
       const rowData = {
         sr: index + 1,
-        activity: outlet.activity,
-        outletMobile: outlet.outletMobile,
-        employeeName: outlet.createdBy?.dsName || "N/A",
-        wdCode: outlet.createdBy?.WD_Code || "N/A",
-        latitude: outlet.location?.latitude,
-        longitude: outlet.location?.longitude,
+        activity: outlet.activity || "",
+        outletMobile: outlet.outletMobile || "",
+
+        employeeName: emp.dsName || "N/A",
+        employeeMobile: emp.dsMobile || "N/A",
+        wdCode: emp.WD_Code || "N/A",
+        branch: emp.Branch || "N/A",
+        govtDistrict: emp.Govt_District || "N/A",
+        circleAM: emp.Circle_AM || "N/A",
+        sectionAE: emp.Section_AE || "N/A",
+        city: emp.City || "N/A",
+        dsType: emp.typeOfDs || "N/A",
+
+        latitude: outlet.location?.latitude || "",
+        longitude: outlet.location?.longitude || "",
+
         createdAt: new Date(outlet.createdAt).toLocaleString("en-IN"),
-        imageUrl: imageUrl || "No Image",
+        imageUrl: imageUrl || "No Image"
       };
 
       const row = worksheet.addRow(rowData);
 
-      // Make Image URL clickable
+      // ===============================
+      // 8️⃣ MAKE IMAGE URL CLICKABLE
+      // ===============================
       if (imageUrl) {
         row.getCell("imageUrl").value = {
           text: imageUrl,
           hyperlink: imageUrl,
           tooltip: "Click to view image"
         };
-        row.getCell("imageUrl").font = { color: { argb: "FF0000FF" }, underline: true };
+        row.getCell("imageUrl").font = {
+          color: { argb: "FF0000FF" },
+          underline: true
+        };
       }
     });
 
-    // Styling the header
+    // ===============================
+    // 9️⃣ HEADER STYLE
+    // ===============================
     worksheet.getRow(1).font = { bold: true };
 
+    // ===============================
+    // 🔟 SEND FILE
+    // ===============================
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=" + "Outlets_Data.xlsx"
+      "attachment; filename=Outlets_Report.xlsx"
     );
 
     await workbook.xlsx.write(res);
