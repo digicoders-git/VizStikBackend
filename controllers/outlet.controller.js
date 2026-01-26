@@ -2,7 +2,11 @@ import Outlet from "../model/outlet.model.js";
 import Employee from "../model/employee.model.js";
 import ExcelJS from "exceljs";
 import { compressImage } from "../utils/imageResizer.js";
-import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
+// import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
+import fs from "fs";
+import path from "path";
+import { addOutletStamp } from "../utils/addOutletStamp.js";
+
 
 /* =========================
    CREATE OUTLET
@@ -27,27 +31,65 @@ export const createOutlet = async (req, res) => {
 
     const outletImages = [];
 
+    // for upload image on local or cloudinary start
     for (const file of req.files) {
       // 🔥 Image Compression
       await compressImage(file.path, 50);
 
-      // const filename = file.filename;
-      // const localPath = `uploads/outlets/${filename}`;
+      const filename = file.filename;
+      const localPath = `uploads/outlets/${filename}`;
 
-      // outletImages.push({
-      //   url: `${req.protocol}://${req.get("host")}/${localPath}`,
-      //   public_id: localPath
-      // });
+      outletImages.push({
+        url: `${req.protocol}://${req.get("host")}/${localPath}`,
+        public_id: localPath
+      });
 
       // 🔥 Cloudinary Upload
-      const result = await uploadOnCloudinary(file.path, "outlets");
-      if (result) {
-        outletImages.push({
-          url: result.url,
-          public_id: result.public_id
-        });
-      }
+      // const result = await uploadOnCloudinary(file.path, "outlets");
+      // if (result) {
+      //   outletImages.push({
+      //     url: result.url,
+      //     public_id: result.public_id
+      //   });
+      // }
     }
+    // for upload image on local or cloudinary end
+
+    // watermark on image start
+    const employee = req.employee; // middleware se aa raha hai
+
+    for (const file of req.files) {
+
+      const inputPath = file.path;
+
+      const stampedPath = file.path.replace(
+        /(\.\w+)$/,
+        "-stamped.jpg"
+      );
+
+      await addOutletStamp({
+        inputPath,
+        outputPath: stampedPath,
+        branchName: employee.Branch || "N/A",
+        wdCode: employee.WD_Code || "N/A",
+        activity: activity || "N/A",
+        latitude,
+        longitude
+      });
+
+      // 🧹 Delete original image
+      fs.unlinkSync(inputPath);
+
+      const filename = path.basename(stampedPath);
+      const localPath = `uploads/outlets/${filename}`;
+
+      outletImages.push({
+        url: `${req.protocol}://${req.get("host")}/${localPath}`,
+        public_id: localPath
+      });
+    }
+
+    // watermark on image start
 
     const outlet = await Outlet.create({
       activity,
@@ -178,22 +220,22 @@ export const updateOutlet = async (req, res) => {
         // 🔥 Image Compression
         await compressImage(file.path, 50);
 
-        // const filename = file.filename;
-        // const localPath = `uploads/outlets/${filename}`;
+        const filename = file.filename;
+        const localPath = `uploads/outlets/${filename}`;
 
-        // images.push({
-        //   url: `${req.protocol}://${req.get("host")}/${localPath}`,
-        //   public_id: localPath
-        // });
+        images.push({
+          url: `${req.protocol}://${req.get("host")}/${localPath}`,
+          public_id: localPath
+        });
 
         // 🔥 Cloudinary Upload
-        const result = await uploadOnCloudinary(file.path, "outlets");
-        if (result) {
-          images.push({
-            url: result.url,
-            public_id: result.public_id
-          });
-        }
+        // const result = await uploadOnCloudinary(file.path, "outlets");
+        // if (result) {
+        //   images.push({
+        //     url: result.url,
+        //     public_id: result.public_id
+        //   });
+        // }
       }
       outlet.outletImages = images;
     }
@@ -237,13 +279,13 @@ export const deleteOutlet = async (req, res) => {
     }
 
     // 🔥 Delete images from Cloudinary
-    if (outlet.outletImages && outlet.outletImages.length > 0) {
-      for (const img of outlet.outletImages) {
-        if (img.public_id) {
-          await deleteFromCloudinary(img.public_id);
-        }
-      }
-    }
+    // if (outlet.outletImages && outlet.outletImages.length > 0) {
+    //   for (const img of outlet.outletImages) {
+    //     if (img.public_id) {
+    //       await deleteFromCloudinary(img.public_id);
+    //     }
+    //   }
+    // }
 
     await outlet.deleteOne();
 
@@ -275,13 +317,13 @@ export const deleteOutletAdmin = async (req, res) => {
     }
 
     // 🔥 Delete images from Cloudinary
-    if (outlet.outletImages && outlet.outletImages.length > 0) {
-      for (const img of outlet.outletImages) {
-        if (img.public_id) {
-          await deleteFromCloudinary(img.public_id);
-        }
-      }
-    }
+    // if (outlet.outletImages && outlet.outletImages.length > 0) {
+    //   for (const img of outlet.outletImages) {
+    //     if (img.public_id) {
+    //       await deleteFromCloudinary(img.public_id);
+    //     }
+    //   }
+    // }
 
     await outlet.deleteOne();
 
@@ -425,7 +467,11 @@ export const getAllOutletsAdmin = async (req, res) => {
     if (fromDate || toDate) {
       query.createdAt = {};
       if (fromDate) query.createdAt.$gte = new Date(fromDate);
-      if (toDate) query.createdAt.$lte = new Date(toDate);
+      if (toDate) {
+        let end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
     }
 
     /* ========================

@@ -812,6 +812,7 @@ export const registerOrUpdateEmployee = async (req, res) => {
     // 5️⃣ Send OTP
     const smsSent = await sendOtpSms(dsMobile, otp);
     console.log(`OTP ${otp} sent to ${dsMobile}`);
+    console.log('sent')
 
     if (!smsSent) {
       return res.status(500).json({
@@ -947,7 +948,11 @@ export const getAllEmployeesAdmin = async (req, res) => {
     if (fromDate || toDate) {
       query.createdAt = {};
       if (fromDate) query.createdAt.$gte = new Date(fromDate);
-      if (toDate) query.createdAt.$lte = new Date(toDate);
+      if (toDate) {
+        let end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
     }
 
     /* ========================

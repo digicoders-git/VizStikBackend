@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const sendOtpSms = async (phone, otp) => {
+export const sendOtpSms = async (dsMobile, otp) => {
   try {
     // const message = `Your OTP Code is ${otp}. Do not share it with anyone. From DigiCoders. #TeamDigi`;
 
@@ -18,9 +18,9 @@ export const sendOtpSms = async (phone, otp) => {
     // };
 
     // const response = await axios.get(url, { params });
-    const response = await axios.get(`http://sms.digicoders.in/api/sendhttp.php?authkey=${process.env.AUTHKEY}&mobiles=${phone}&message=Your OTP Code is ${otp}. Do not share it with anyone. From VizStik . Developed by %23TeamDigiCoders&sender=DIGICO&route=4&country=91&DLT_TE_ID=${process.env.DLT_TE_ID}`);
+    const response = await axios.get(`http://sms.digicoders.in/api/sendhttp.php?authkey=${process.env.AUTHKEY}&mobiles=${dsMobile}&message=Your OTP Code is ${otp}. Do not share it with anyone. From VizStik . Developed by %23TeamDigiCoders&sender=DIGICO&route=4&country=91&DLT_TE_ID=${process.env.DLT_TE_ID}`);
 
-    // console.log("SMS API Response:", response.data);
+    console.log("SMS API Response:", response.data);
     return true;
 
   } catch (error) {
