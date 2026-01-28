@@ -7,6 +7,12 @@ import fs from "fs";
 import path from "path";
 import { addOutletStamp } from "../utils/addOutletStamp.js";
 
+import archiver from "archiver";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 /* =========================
    CREATE OUTLET
@@ -68,16 +74,16 @@ export const createOutlet = async (req, res) => {
       );
 
       await addOutletStamp({
-  inputPath,
-  outputPath: stampedPath,
-  branchName: employee.Branch || "N/A",
-  wdCode: employee.WD_Code || "N/A",
-  activity: activity || "N/A",
-  latitude,
-  longitude,
-  salesmanName: employee.dsName || "N/A",
-  sectionName: employee.Section_AE || "N/A"
-});
+        inputPath,
+        outputPath: stampedPath,
+        branchName: employee.Branch || "N/A",
+        wdCode: employee.WD_Code || "N/A",
+        activity: activity || "N/A",
+        latitude,
+        longitude,
+        salesmanName: employee.dsName || "N/A",
+        sectionName: employee.Section_AE || "N/A"
+      });
 
 
       // 🧹 Delete original image
@@ -530,7 +536,7 @@ export const downloadOutletsExcel = async (req, res) => {
     let query = {};
 
     /* ===============================
-       🔎 SEARCH (ADDED)
+       🔎 SEARCH
     =============================== */
     if (search) {
       query.$or = [
@@ -539,52 +545,31 @@ export const downloadOutletsExcel = async (req, res) => {
       ];
     }
 
-    // ===============================
-    // 1️⃣ FILTER BY EMPLOYEE
-    // ===============================
     if (employeeId) {
       query.createdBy = employeeId;
     }
 
-    // ===============================
-    // 2️⃣ FILTER BY BRANCH
-    // ===============================
     if (Branch) {
       const employees = await Employee.find({
         Branch: { $regex: Branch, $options: "i" }
       }).select("_id");
-
-      const employeeIds = employees.map(e => e._id);
-      query.createdBy = { $in: employeeIds };
+      query.createdBy = { $in: employees.map(e => e._id) };
     }
 
-    // ===============================
-    // 3️⃣ FILTER BY CIRCLE
-    // ===============================
     if (Circle_AM) {
       const employees = await Employee.find({
         Circle_AM: { $regex: Circle_AM, $options: "i" }
       }).select("_id");
-
-      const employeeIds = employees.map(e => e._id);
-      query.createdBy = { $in: employeeIds };
+      query.createdBy = { $in: employees.map(e => e._id) };
     }
 
-    // ===============================
-    // 4️⃣ FILTER BY SECTION
-    // ===============================
     if (Section_AE) {
       const employees = await Employee.find({
         Section_AE: { $regex: Section_AE, $options: "i" }
       }).select("_id");
-
-      const employeeIds = employees.map(e => e._id);
-      query.createdBy = { $in: employeeIds };
+      query.createdBy = { $in: employees.map(e => e._id) };
     }
 
-    /* ===============================
-       📅 DATE FILTER (ADDED)
-    =============================== */
     if (fromDate || toDate) {
       query.createdAt = {};
       if (fromDate) query.createdAt.$gte = new Date(fromDate);
@@ -595,17 +580,27 @@ export const downloadOutletsExcel = async (req, res) => {
       }
     }
 
-    // ===============================
-    // 5️⃣ FETCH OUTLETS WITH FULL EMPLOYEE DATA
-    // ===============================
+    /* ===============================
+       📦 FETCH OUTLETS
+    =============================== */
     const outlets = await Outlet.find(query)
       .populate("createdBy")
       .sort({ createdAt: -1 })
       .lean();
 
-    // ===============================
-    // 6️⃣ CREATE EXCEL
-    // ===============================
+    /* ===============================
+       🔥 FIND MAX IMAGES COUNT
+    =============================== */
+    let maxImages = 0;
+    outlets.forEach(o => {
+      if (o.outletImages && o.outletImages.length > maxImages) {
+        maxImages = o.outletImages.length;
+      }
+    });
+
+    /* ===============================
+       📊 CREATE EXCEL
+    =============================== */
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Outlets");
 
@@ -627,17 +622,21 @@ export const downloadOutletsExcel = async (req, res) => {
 
       { header: "Latitude", key: "latitude", width: 15 },
       { header: "Longitude", key: "longitude", width: 15 },
-
       { header: "Created At", key: "createdAt", width: 22 },
-      { header: "Image URL", key: "imageUrl", width: 50 }
+
+      // 🔥 Dynamic Image Columns
+      ...Array.from({ length: maxImages }).map((_, i) => ({
+        header: `Image ${i + 1}`,
+        key: `image${i + 1}`,
+        width: 40
+      }))
     ];
 
-    // ===============================
-    // 7️⃣ FILL ROWS
-    // ===============================
+    /* ===============================
+       🧾 FILL ROWS
+    =============================== */
     outlets.forEach((outlet, index) => {
       const emp = outlet.createdBy || {};
-      const imageUrl = outlet.outletImages?.[0]?.url || "";
 
       const rowData = {
         sr: index + 1,
@@ -657,24 +656,29 @@ export const downloadOutletsExcel = async (req, res) => {
 
         latitude: outlet.location?.latitude || "",
         longitude: outlet.location?.longitude || "",
-
-        createdAt: new Date(outlet.createdAt).toLocaleString("en-IN"),
-        imageUrl: imageUrl || "No Image"
+        createdAt: new Date(outlet.createdAt).toLocaleString("en-IN")
       };
+
+      // 🔥 Add images
+      (outlet.outletImages || []).forEach((img, i) => {
+        rowData[`image${i + 1}`] = img.url;
+      });
 
       const row = worksheet.addRow(rowData);
 
-      if (imageUrl) {
-        row.getCell("imageUrl").value = {
-          text: imageUrl,
-          hyperlink: imageUrl,
+      // 🔥 Make clickable
+      (outlet.outletImages || []).forEach((img, i) => {
+        const cell = row.getCell(`image${i + 1}`);
+        cell.value = {
+          text: img.url,
+          hyperlink: img.url,
           tooltip: "Click to view image"
         };
-        row.getCell("imageUrl").font = {
+        cell.font = {
           color: { argb: "FF0000FF" },
           underline: true
         };
-      }
+      });
     });
 
     worksheet.getRow(1).font = { bold: true };
@@ -700,3 +704,132 @@ export const downloadOutletsExcel = async (req, res) => {
   }
 };
 
+
+export const downloadOutletsImagesZip = async (req, res) => {
+  try {
+    const {
+      employeeId,
+      Branch,
+      Circle_AM,
+      Section_AE,
+      search,
+      fromDate,
+      toDate
+    } = req.query;
+
+    let query = {};
+
+    /* ===============================
+       🔎 SEARCH
+    =============================== */
+    if (search) {
+      query.$or = [
+        { activity: { $regex: search, $options: "i" } },
+        { outletMobile: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    if (employeeId) {
+      query.createdBy = employeeId;
+    }
+
+    if (Branch) {
+      const employees = await Employee.find({
+        Branch: { $regex: Branch, $options: "i" }
+      }).select("_id");
+      query.createdBy = { $in: employees.map(e => e._id) };
+    }
+
+    if (Circle_AM) {
+      const employees = await Employee.find({
+        Circle_AM: { $regex: Circle_AM, $options: "i" }
+      }).select("_id");
+      query.createdBy = { $in: employees.map(e => e._id) };
+    }
+
+    if (Section_AE) {
+      const employees = await Employee.find({
+        Section_AE: { $regex: Section_AE, $options: "i" }
+      }).select("_id");
+      query.createdBy = { $in: employees.map(e => e._id) };
+    }
+
+    if (fromDate || toDate) {
+      query.createdAt = {};
+      if (fromDate) query.createdAt.$gte = new Date(fromDate);
+      if (toDate) {
+        let end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
+    }
+
+    /* ===============================
+       📦 FETCH OUTLETS
+    =============================== */
+    const outlets = await Outlet.find(query).lean();
+
+    if (!outlets.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No outlets found for given filters"
+      });
+    }
+
+    /* ===============================
+       🗜️ CREATE ZIP STREAM
+    =============================== */
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=Outlets_Images.zip"
+    );
+
+    const archive = archiver("zip", { zlib: { level: 9 } });
+
+    archive.on("error", err => {
+      throw err;
+    });
+
+    archive.pipe(res);
+
+    /* ===============================
+       📸 ADD IMAGES TO ZIP
+    =============================== */
+    let imageCount = 0;
+
+    for (const outlet of outlets) {
+      if (outlet.outletImages && outlet.outletImages.length) {
+        for (const img of outlet.outletImages) {
+          // img.public_id = uploads/outlets/filename.jpg
+          const filePath = path.join(process.cwd(), img.public_id);
+
+          if (fs.existsSync(filePath)) {
+            // Folder per outlet
+            const folderName = `Outlet_${outlet._id}`;
+            const fileName = path.basename(filePath);
+
+            archive.file(filePath, {
+              name: `${folderName}/${fileName}`
+            });
+
+            imageCount++;
+          }
+        }
+      }
+    }
+
+    if (imageCount === 0) {
+      archive.append("No images found", { name: "README.txt" });
+    }
+
+    await archive.finalize();
+
+  } catch (error) {
+    console.error("Download Outlets Images ZIP Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
