@@ -68,14 +68,17 @@ export const createOutlet = async (req, res) => {
       );
 
       await addOutletStamp({
-        inputPath,
-        outputPath: stampedPath,
-        branchName: employee.Branch || "N/A",
-        wdCode: employee.WD_Code || "N/A",
-        activity: activity || "N/A",
-        latitude,
-        longitude
-      });
+  inputPath,
+  outputPath: stampedPath,
+  branchName: employee.Branch || "N/A",
+  wdCode: employee.WD_Code || "N/A",
+  activity: activity || "N/A",
+  latitude,
+  longitude,
+  salesmanName: employee.dsName || "N/A",
+  sectionName: employee.Section_AE || "N/A"
+});
+
 
       // 🧹 Delete original image
       fs.unlinkSync(inputPath);
@@ -514,9 +517,27 @@ export const getAllOutletsAdmin = async (req, res) => {
 ========================= */
 export const downloadOutletsExcel = async (req, res) => {
   try {
-    const { employeeId, Branch, Circle_AM, Section_AE } = req.query;
+    const {
+      employeeId,
+      Branch,
+      Circle_AM,
+      Section_AE,
+      search,
+      fromDate,
+      toDate
+    } = req.query;
 
     let query = {};
+
+    /* ===============================
+       🔎 SEARCH (ADDED)
+    =============================== */
+    if (search) {
+      query.$or = [
+        { activity: { $regex: search, $options: "i" } },
+        { outletMobile: { $regex: search, $options: "i" } }
+      ];
+    }
 
     // ===============================
     // 1️⃣ FILTER BY EMPLOYEE
@@ -561,11 +582,24 @@ export const downloadOutletsExcel = async (req, res) => {
       query.createdBy = { $in: employeeIds };
     }
 
+    /* ===============================
+       📅 DATE FILTER (ADDED)
+    =============================== */
+    if (fromDate || toDate) {
+      query.createdAt = {};
+      if (fromDate) query.createdAt.$gte = new Date(fromDate);
+      if (toDate) {
+        let end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
+    }
+
     // ===============================
     // 5️⃣ FETCH OUTLETS WITH FULL EMPLOYEE DATA
     // ===============================
     const outlets = await Outlet.find(query)
-      .populate("createdBy") // 👈 FULL employee data
+      .populate("createdBy")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -579,8 +613,8 @@ export const downloadOutletsExcel = async (req, res) => {
       { header: "Sr.", key: "sr", width: 8 },
       { header: "Activity", key: "activity", width: 25 },
       { header: "Outlet Mobile", key: "outletMobile", width: 18 },
+      { header: "Outlet Name", key: "outletName", width: 18 },
 
-      // ===== EMPLOYEE DATA =====
       { header: "Employee Name", key: "employeeName", width: 25 },
       { header: "Employee Mobile", key: "employeeMobile", width: 20 },
       { header: "WD Code", key: "wdCode", width: 15 },
@@ -591,11 +625,9 @@ export const downloadOutletsExcel = async (req, res) => {
       { header: "City", key: "city", width: 20 },
       { header: "DS Type", key: "dsType", width: 15 },
 
-      // ===== LOCATION =====
       { header: "Latitude", key: "latitude", width: 15 },
       { header: "Longitude", key: "longitude", width: 15 },
 
-      // ===== META =====
       { header: "Created At", key: "createdAt", width: 22 },
       { header: "Image URL", key: "imageUrl", width: 50 }
     ];
@@ -611,6 +643,7 @@ export const downloadOutletsExcel = async (req, res) => {
         sr: index + 1,
         activity: outlet.activity || "",
         outletMobile: outlet.outletMobile || "",
+        outletName: outlet.outletName || "",
 
         employeeName: emp.dsName || "N/A",
         employeeMobile: emp.dsMobile || "N/A",
@@ -631,9 +664,6 @@ export const downloadOutletsExcel = async (req, res) => {
 
       const row = worksheet.addRow(rowData);
 
-      // ===============================
-      // 8️⃣ MAKE IMAGE URL CLICKABLE
-      // ===============================
       if (imageUrl) {
         row.getCell("imageUrl").value = {
           text: imageUrl,
@@ -647,14 +677,8 @@ export const downloadOutletsExcel = async (req, res) => {
       }
     });
 
-    // ===============================
-    // 9️⃣ HEADER STYLE
-    // ===============================
     worksheet.getRow(1).font = { bold: true };
 
-    // ===============================
-    // 🔟 SEND FILE
-    // ===============================
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
