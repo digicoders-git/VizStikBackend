@@ -36,42 +36,16 @@ export const createOutlet = async (req, res) => {
     }
 
     const outletImages = [];
-
-    // for upload image on local or cloudinary start
-    for (const file of req.files) {
-      // 🔥 Image Compression
-      await compressImage(file.path, 50);
-
-      const filename = file.filename;
-      const localPath = `uploads/outlets/${filename}`;
-
-      outletImages.push({
-        url: `${req.protocol}://${req.get("host")}/${localPath}`,
-        public_id: localPath
-      });
-
-      // 🔥 Cloudinary Upload
-      // const result = await uploadOnCloudinary(file.path, "outlets");
-      // if (result) {
-      //   outletImages.push({
-      //     url: result.url,
-      //     public_id: result.public_id
-      //   });
-      // }
-    }
-    // for upload image on local or cloudinary end
-
-    // watermark on image start
     const employee = req.employee; // middleware se aa raha hai
 
+    // ✅ ONLY ONE LOOP — create stamped image and save ONLY that
     for (const file of req.files) {
-
       const inputPath = file.path;
 
-      const stampedPath = file.path.replace(
-        /(\.\w+)$/,
-        "-stamped.jpg"
-      );
+      // 🔥 Optional: compress original before stamping
+      await compressImage(inputPath, 50);
+
+      const stampedPath = file.path.replace(/(\.\w+)$/, "-stamped.jpg");
 
       await addOutletStamp({
         inputPath,
@@ -85,8 +59,7 @@ export const createOutlet = async (req, res) => {
         sectionName: employee.Section_AE || "N/A"
       });
 
-
-      // 🧹 Delete original image
+      // 🧹 Delete original image (important)
       fs.unlinkSync(inputPath);
 
       const filename = path.basename(stampedPath);
@@ -97,8 +70,6 @@ export const createOutlet = async (req, res) => {
         public_id: localPath
       });
     }
-
-    // watermark on image start
 
     const outlet = await Outlet.create({
       activity,
@@ -117,7 +88,7 @@ export const createOutlet = async (req, res) => {
       $push: { addedOutlet: outlet._id }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Outlet created successfully",
       data: outlet
@@ -125,12 +96,13 @@ export const createOutlet = async (req, res) => {
 
   } catch (error) {
     console.error("Create Outlet Error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Server error"
     });
   }
 };
+
 
 /* =========================
    GET MY OUTLETS
