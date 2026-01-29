@@ -1,5 +1,6 @@
 import Outlet from "../model/outlet.model.js";
 import Employee from "../model/employee.model.js";
+import Prefield from "../model/prefield.model.js";
 import ExcelJS from "exceljs";
 import { compressImage } from "../utils/imageResizer.js";
 // import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
@@ -390,12 +391,15 @@ export const getAllOutletsAdmin = async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 1000000000909090909900909,
+      limit = 10,
       search,
       employeeId,
       Branch,
+      Govt_District,
       Circle_AM,
       Section_AE,
+      activity,
+      typeOfDs,
       fromDate,
       toDate
     } = req.query;
@@ -404,50 +408,15 @@ export const getAllOutletsAdmin = async (req, res) => {
 
     let query = {};
 
-    /* ========================
-       🔎 SEARCH
-    ======================== */
-    if (search) {
-      query.$or = [
-        { activity: { $regex: search, $options: "i" } },
-        { outletMobile: { $regex: search, $options: "i" } }
-      ];
-    }
-
-    /* ========================
-       👤 FILTER BY EMPLOYEE
-    ======================== */
-    if (employeeId) {
-      query.createdBy = employeeId;
-    }
-
-    /* ========================
-       🏢 FILTER BY BRANCH (Via Employee)
-    ======================== */
-    if (Branch) {
-      const employeesInBranch = await Employee.find({ Branch: { $regex: Branch, $options: "i" } }).select("_id");
-      const employeeIds = employeesInBranch.map(emp => emp._id);
-      query.createdBy = { $in: employeeIds };
-    }
-
-    if (Circle_AM) {
-      const employeesInCircle = await Employee.find({ Circle_AM: { $regex: Circle_AM, $options: "i" } }).select("_id");
-      const employeeIds = employeesInCircle.map(emp => emp._id);
-      query.createdBy = { $in: employeeIds };
-    }
-
-    if (Section_AE) {
-      const employeesInSection = await Employee.find({ Section_AE: { $regex: Section_AE, $options: "i" } }).select("_id");
-      const employeeIds = employeesInSection.map(emp => emp._id);
-      query.createdBy = { $in: employeeIds };
-    }
-
-    /* ========================
-       📅 FILTER BY DATE
-    ======================== */
+    // 1. Mandatory filters (Activity, Date Range)
+    if (activity) query.activity = activity;
     if (fromDate || toDate) {
       query.createdAt = {};
-      if (fromDate) query.createdAt.$gte = new Date(fromDate);
+      if (fromDate) {
+        const start = new Date(fromDate);
+        start.setHours(0, 0, 0, 0);
+        query.createdAt.$gte = start;
+      }
       if (toDate) {
         let end = new Date(toDate);
         end.setHours(23, 59, 59, 999);
@@ -455,14 +424,52 @@ export const getAllOutletsAdmin = async (req, res) => {
       }
     }
 
-    /* ========================
-       🔢 TOTAL COUNT
-    ======================== */
+    // 2. Employee criteria (Branch, Govt_District, Circle_AM, Section_AE, typeOfDs, employeeId)
+    let employeeFilter = {};
+    if (Branch) employeeFilter.Branch = { $regex: Branch, $options: "i" };
+    if (Govt_District) employeeFilter.Govt_District = { $regex: Govt_District, $options: "i" };
+    if (Circle_AM) employeeFilter.Circle_AM = { $regex: Circle_AM, $options: "i" };
+    if (Section_AE) employeeFilter.Section_AE = { $regex: Section_AE, $options: "i" };
+    if (typeOfDs) employeeFilter.typeOfDs = typeOfDs;
+    if (employeeId) employeeFilter._id = employeeId;
+
+    if (Object.keys(employeeFilter).length > 0) {
+      const filteredEmployees = await Employee.find(employeeFilter).select("_id");
+      const filteredEmployeeIds = filteredEmployees.map(e => e._id);
+      query.createdBy = { $in: filteredEmployeeIds };
+    }
+
+    // 3. Global Search (outletMobile, outletName, activity, dsName, dsMobile, WD_Code)
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+
+      const matchedEmployees = await Employee.find({
+        $or: [
+          { dsName: searchRegex },
+          { dsMobile: searchRegex },
+          { WD_Code: searchRegex }
+        ]
+      }).select("_id");
+      const matchedEmployeeIds = matchedEmployees.map(e => e._id);
+
+      const searchPart = {
+        $or: [
+          { activity: searchRegex },
+          { outletMobile: searchRegex },
+          { outletName: searchRegex },
+          { createdBy: { $in: matchedEmployeeIds } }
+        ]
+      };
+
+      if (Object.keys(query).length > 0) {
+        query = { $and: [query, searchPart] };
+      } else {
+        query = searchPart;
+      }
+    }
+
     const total = await Outlet.countDocuments(query);
 
-    /* ========================
-       📦 FETCH DATA
-    ======================== */
     const outlets = await Outlet.find(query)
       .populate("createdBy", "dsName dsMobile WD_Code typeOfDs Branch Govt_District Circle_AM Section_AE City")
       .sort({ createdAt: -1 })
@@ -498,8 +505,11 @@ export const downloadOutletsExcel = async (req, res) => {
     const {
       employeeId,
       Branch,
+      Govt_District,
       Circle_AM,
       Section_AE,
+      activity,
+      typeOfDs,
       search,
       fromDate,
       toDate
@@ -507,54 +517,58 @@ export const downloadOutletsExcel = async (req, res) => {
 
     let query = {};
 
-    /* ===============================
-       🔎 SEARCH
-    =============================== */
-    if (search) {
-      query.$or = [
-        { activity: { $regex: search, $options: "i" } },
-        { outletMobile: { $regex: search, $options: "i" } }
-      ];
-    }
-
-    if (employeeId) {
-      query.createdBy = employeeId;
-    }
-
-    if (Branch) {
-      const employees = await Employee.find({
-        Branch: { $regex: Branch, $options: "i" }
-      }).select("_id");
-      query.createdBy = { $in: employees.map(e => e._id) };
-    }
-
-    if (Circle_AM) {
-      const employees = await Employee.find({
-        Circle_AM: { $regex: Circle_AM, $options: "i" }
-      }).select("_id");
-      query.createdBy = { $in: employees.map(e => e._id) };
-    }
-
-    if (Section_AE) {
-      const employees = await Employee.find({
-        Section_AE: { $regex: Section_AE, $options: "i" }
-      }).select("_id");
-      query.createdBy = { $in: employees.map(e => e._id) };
-    }
-
+    // Use same filtering logic as getAllOutletsAdmin
+    if (activity) query.activity = activity;
     if (fromDate || toDate) {
       query.createdAt = {};
       if (fromDate) query.createdAt.$gte = new Date(fromDate);
       if (toDate) {
         let end = new Date(toDate);
-        end.setHours(23, 59, 59, 999);
+        if (toDate.length <= 10) end.setHours(23, 59, 59, 999);
         query.createdAt.$lte = end;
       }
     }
 
-    /* ===============================
-       📦 FETCH OUTLETS
-    =============================== */
+    let employeeFilter = {};
+    if (Branch) employeeFilter.Branch = { $regex: Branch, $options: "i" };
+    if (Govt_District) employeeFilter.Govt_District = { $regex: Govt_District, $options: "i" };
+    if (Circle_AM) employeeFilter.Circle_AM = { $regex: Circle_AM, $options: "i" };
+    if (Section_AE) employeeFilter.Section_AE = { $regex: Section_AE, $options: "i" };
+    if (typeOfDs) employeeFilter.typeOfDs = typeOfDs;
+    if (employeeId) employeeFilter._id = employeeId;
+
+    if (Object.keys(employeeFilter).length > 0) {
+      const filteredEmployees = await Employee.find(employeeFilter).select("_id");
+      query.createdBy = { $in: filteredEmployees.map(e => e._id) };
+    }
+
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      const matchedEmployees = await Employee.find({
+        $or: [
+          { dsName: searchRegex },
+          { dsMobile: searchRegex },
+          { WD_Code: searchRegex }
+        ]
+      }).select("_id");
+      const matchedEmployeeIds = matchedEmployees.map(e => e._id);
+
+      const searchPart = {
+        $or: [
+          { activity: searchRegex },
+          { outletMobile: searchRegex },
+          { outletName: searchRegex },
+          { createdBy: { $in: matchedEmployeeIds } }
+        ]
+      };
+
+      if (Object.keys(query).length > 0) {
+        query = { $and: [query, searchPart] };
+      } else {
+        query = searchPart;
+      }
+    }
+
     const outlets = await Outlet.find(query)
       .populate("createdBy")
       .sort({ createdAt: -1 })
@@ -682,8 +696,11 @@ export const downloadOutletsImagesZip = async (req, res) => {
     const {
       employeeId,
       Branch,
+      Govt_District,
       Circle_AM,
       Section_AE,
+      activity,
+      typeOfDs,
       search,
       fromDate,
       toDate
@@ -691,44 +708,15 @@ export const downloadOutletsImagesZip = async (req, res) => {
 
     let query = {};
 
-    /* ===============================
-       🔎 SEARCH
-    =============================== */
-    if (search) {
-      query.$or = [
-        { activity: { $regex: search, $options: "i" } },
-        { outletMobile: { $regex: search, $options: "i" } }
-      ];
-    }
-
-    if (employeeId) {
-      query.createdBy = employeeId;
-    }
-
-    if (Branch) {
-      const employees = await Employee.find({
-        Branch: { $regex: Branch, $options: "i" }
-      }).select("_id");
-      query.createdBy = { $in: employees.map(e => e._id) };
-    }
-
-    if (Circle_AM) {
-      const employees = await Employee.find({
-        Circle_AM: { $regex: Circle_AM, $options: "i" }
-      }).select("_id");
-      query.createdBy = { $in: employees.map(e => e._id) };
-    }
-
-    if (Section_AE) {
-      const employees = await Employee.find({
-        Section_AE: { $regex: Section_AE, $options: "i" }
-      }).select("_id");
-      query.createdBy = { $in: employees.map(e => e._id) };
-    }
-
+    // 1. Mandatory filters (Activity, Date Range) - Synced with getAllOutletsAdmin
+    if (activity) query.activity = activity;
     if (fromDate || toDate) {
       query.createdAt = {};
-      if (fromDate) query.createdAt.$gte = new Date(fromDate);
+      if (fromDate) {
+        const start = new Date(fromDate);
+        start.setHours(0, 0, 0, 0);
+        query.createdAt.$gte = start;
+      }
       if (toDate) {
         let end = new Date(toDate);
         end.setHours(23, 59, 59, 999);
@@ -736,72 +724,314 @@ export const downloadOutletsImagesZip = async (req, res) => {
       }
     }
 
-    /* ===============================
-       📦 FETCH OUTLETS
-    =============================== */
-    const outlets = await Outlet.find(query).lean();
+    // 2. Employee criteria
+    let employeeFilter = {};
+    if (Branch) employeeFilter.Branch = { $regex: Branch, $options: "i" };
+    if (Govt_District) employeeFilter.Govt_District = { $regex: Govt_District, $options: "i" };
+    if (Circle_AM) employeeFilter.Circle_AM = { $regex: Circle_AM, $options: "i" };
+    if (Section_AE) employeeFilter.Section_AE = { $regex: Section_AE, $options: "i" };
+    if (typeOfDs) employeeFilter.typeOfDs = typeOfDs;
+    if (employeeId) employeeFilter._id = employeeId;
 
-    if (!outlets.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No outlets found for given filters"
-      });
+    if (Object.keys(employeeFilter).length > 0) {
+      const filteredEmployees = await Employee.find(employeeFilter).select("_id");
+      query.createdBy = { $in: filteredEmployees.map(e => e._id) };
     }
 
-    /* ===============================
-       🗜️ CREATE ZIP STREAM
-    =============================== */
+    // 3. Global Search
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      const matchedEmployees = await Employee.find({
+        $or: [
+          { dsName: searchRegex },
+          { dsMobile: searchRegex },
+          { WD_Code: searchRegex }
+        ]
+      }).select("_id");
+      const matchedEmployeeIds = matchedEmployees.map(e => e._id);
+
+      const searchPart = {
+        $or: [
+          { activity: searchRegex },
+          { outletMobile: searchRegex },
+          { outletName: searchRegex },
+          { createdBy: { $in: matchedEmployeeIds } }
+        ]
+      };
+
+      if (Object.keys(query).length > 0) {
+        query = { $and: [query, searchPart] };
+      } else {
+        query = searchPart;
+      }
+    }
+
+    /* ==============================================
+       📦 OPTIMIZED PROCESSING (Cursor + Stream)
+    ============================================== */
+    const cursor = Outlet.find(query).lean().cursor();
+
     res.setHeader("Content-Type", "application/zip");
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=Outlets_Images.zip"
+      "attachment; filename=Outlets_Images_Report.zip"
     );
 
-    const archive = archiver("zip", { zlib: { level: 9 } });
+    // level: 1 is fastest. Images are already compressed (JPG), level 9 is a waste of CPU.
+    const archive = archiver("zip", { zlib: { level: 1 } });
 
     archive.on("error", err => {
-      throw err;
+      console.error("Archive Error:", err);
     });
 
     archive.pipe(res);
 
-    /* ===============================
-       📸 ADD IMAGES TO ZIP
-    =============================== */
     let imageCount = 0;
 
-    for (const outlet of outlets) {
+    for (let outlet = await cursor.next(); outlet != null; outlet = await cursor.next()) {
       if (outlet.outletImages && outlet.outletImages.length) {
-        for (const img of outlet.outletImages) {
-          // img.public_id = uploads/outlets/filename.jpg
-          const filePath = path.join(process.cwd(), img.public_id);
-
-          if (fs.existsSync(filePath)) {
-            // Folder per outlet
-            const folderName = `Outlet_${outlet._id}`;
-            const fileName = path.basename(filePath);
-
-            archive.file(filePath, {
-              name: `${folderName}/${fileName}`
-            });
-
-            imageCount++;
+        outlet.outletImages.forEach((img, idx) => {
+          if (img.public_id) {
+            const filePath = path.join(process.cwd(), img.public_id);
+            if (fs.existsSync(filePath)) {
+              // Flat naming: OutletID_ImageIndex_OriginalFileName
+              const baseName = path.basename(filePath);
+              const zipName = `${outlet._id}_${idx + 1}_${baseName}`;
+              archive.file(filePath, { name: zipName });
+              imageCount++;
+            }
           }
-        }
+        });
       }
     }
 
     if (imageCount === 0) {
-      archive.append("No images found", { name: "README.txt" });
+      archive.append("No images found for the selected filters.", { name: "README.txt" });
     }
 
     await archive.finalize();
 
   } catch (error) {
     console.error("Download Outlets Images ZIP Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error"
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  }
+};
+
+
+/* =========================
+   GET OUTLET FILTER OPTIONS
+========================= */
+export const getOutletFilters = async (req, res) => {
+  try {
+    const { Branch, Govt_District, Circle_AM, Section_AE } = req.query;
+
+    const branches = await Prefield.distinct("Branch");
+    const activities = await Outlet.distinct("activity");
+    const typesOfDs = await Employee.distinct("typeOfDs");
+
+    // Hierarchical Query Building
+    const buildQuery = (filters) => {
+      let q = {};
+      if (filters.Branch) q.Branch = { $regex: filters.Branch, $options: "i" };
+      if (filters.Govt_District) q.Govt_District = { $regex: filters.Govt_District, $options: "i" };
+      if (filters.Circle_AM) q.Circle_AM = { $regex: filters.Circle_AM, $options: "i" };
+      if (filters.Section_AE) q.Section_AE = { $regex: filters.Section_AE, $options: "i" };
+      return q;
+    };
+
+    const govtDistricts = await Prefield.distinct("Govt_District", buildQuery({ Branch }));
+    const circleAMs = await Prefield.distinct("Circle_AM", buildQuery({ Branch, Govt_District }));
+    const sectionAEs = await Prefield.distinct("Section_AE", buildQuery({ Branch, Govt_District, Circle_AM }));
+
+    res.json({
+      success: true,
+      branches: branches.filter(Boolean).sort(),
+      govtDistricts: govtDistricts.filter(Boolean).sort(),
+      circleAMs: circleAMs.filter(Boolean).sort(),
+      sectionAEs: sectionAEs.filter(Boolean).sort(),
+      activities: activities.filter(Boolean).sort(),
+      typesOfDs: typesOfDs.filter(Boolean).sort()
     });
+  } catch (error) {
+    console.error("Get Filters Error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+/* =========================
+   GET ADMIN DASHBOARD STATS
+========================= */
+export const getAdminDashboardStats = async (req, res) => {
+  try {
+    const { filter = "Day", Branch, Circle_AM, Section_AE } = req.query;
+    console.log("Dashboard Stats Request:", { filter, Branch, Circle_AM, Section_AE });
+
+    const empQuery = {};
+    if (Branch && Branch !== "undefined") empQuery.Branch = { $regex: Branch.trim(), $options: "i" };
+    if (Circle_AM && Circle_AM !== "undefined") empQuery.Circle_AM = { $regex: Circle_AM.trim(), $options: "i" };
+    if (Section_AE && Section_AE !== "undefined") empQuery.Section_AE = { $regex: Section_AE.trim(), $options: "i" };
+
+    let outletQuery = {};
+    let empIds = [];
+
+    // If we have filters, we must restrict by employee IDs
+    if (Object.keys(empQuery).length > 0) {
+      const matchingEmployees = await Employee.find(empQuery).select("_id");
+      empIds = matchingEmployees.map((e) => e._id);
+      outletQuery.createdBy = { $in: empIds };
+    }
+
+    // Baseline stats
+    const [totalEmployees, totalOutlets, totalPrefields] = await Promise.all([
+      Employee.countDocuments(empQuery),
+      Outlet.countDocuments(outletQuery),
+      Prefield.countDocuments(empQuery)
+    ]);
+
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const todayAddedOutlets = await Outlet.countDocuments({
+      ...outletQuery,
+      createdAt: { $gte: todayStart, $lte: todayEnd },
+    });
+
+    let categories = [];
+    let employeeSeries = [];
+    let outletSeries = [];
+    let rangeStart, rangeEnd;
+
+    if (filter === "Day") {
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        categories.push(d.toLocaleDateString("en-US", { weekday: "short" }));
+
+        const start = new Date(d);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(d);
+        end.setHours(23, 59, 59, 999);
+
+        if (i === 6) rangeStart = start;
+        if (i === 0) rangeEnd = end;
+
+        const [eCount, oCount] = await Promise.all([
+          Employee.countDocuments({ ...empQuery, createdAt: { $gte: start, $lte: end } }),
+          Outlet.countDocuments({ ...outletQuery, createdAt: { $gte: start, $lte: end } }),
+        ]);
+        employeeSeries.push(eCount);
+        outletSeries.push(oCount);
+      }
+    } else if (filter === "Week") {
+      for (let i = 3; i >= 0; i--) {
+        categories.push(`Week ${4 - i}`);
+        const weekStart = new Date(now);
+        weekStart.setDate(weekStart.getDate() - i * 7 - 6);
+        weekStart.setHours(0, 0, 0, 0);
+
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+
+        if (i === 3) rangeStart = weekStart;
+        if (i === 0) rangeEnd = weekEnd;
+
+        const [eCount, oCount] = await Promise.all([
+          Employee.countDocuments({ ...empQuery, createdAt: { $gte: weekStart, $lte: weekEnd } }),
+          Outlet.countDocuments({ ...outletQuery, createdAt: { $gte: weekStart, $lte: weekEnd } }),
+        ]);
+        employeeSeries.push(eCount);
+        outletSeries.push(oCount);
+      }
+    } else if (filter === "Month") {
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        categories.push(monthNames[d.getMonth()]);
+
+        const start = new Date(d.getFullYear(), d.getMonth(), 1);
+        const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+
+        if (i === 11) rangeStart = start;
+        if (i === 0) rangeEnd = end;
+
+        const [eCount, oCount] = await Promise.all([
+          Employee.countDocuments({ ...empQuery, createdAt: { $gte: start, $lte: end } }),
+          Outlet.countDocuments({ ...outletQuery, createdAt: { $gte: start, $lte: end } }),
+        ]);
+        employeeSeries.push(eCount);
+        outletSeries.push(oCount);
+      }
+    } else {
+      // Year
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const currentYear = now.getFullYear();
+      categories = monthNames;
+      rangeStart = new Date(currentYear, 0, 1);
+      rangeEnd = new Date(currentYear, 11, 31, 23, 59, 59);
+      for (let i = 0; i < 12; i++) {
+        const start = new Date(currentYear, i, 1);
+        const end = new Date(currentYear, i + 1, 0, 23, 59, 59);
+        const [eCount, oCount] = await Promise.all([
+          Employee.countDocuments({ ...empQuery, createdAt: { $gte: start, $lte: end } }),
+          Outlet.countDocuments({ ...outletQuery, createdAt: { $gte: start, $lte: end } }),
+        ]);
+        employeeSeries.push(eCount);
+        outletSeries.push(oCount);
+      }
+    }
+
+    const filteredEmployeesTotal = employeeSeries.reduce((a, b) => a + b, 0);
+    const filteredOutletsTotal = outletSeries.reduce((a, b) => a + b, 0);
+
+    const [activeEmployeesCount, inactiveEmployeesCount] = await Promise.all([
+      Employee.countDocuments({
+        ...empQuery,
+        isActive: true,
+        createdAt: { $gte: rangeStart, $lte: rangeEnd },
+      }),
+      Employee.countDocuments({
+        ...empQuery,
+        isActive: false,
+        createdAt: { $gte: rangeStart, $lte: rangeEnd },
+      })
+    ]);
+
+    console.log("Stats calculated:", { totalEmployees, totalOutlets, totalPrefields });
+
+    res.json({
+      success: true,
+      stats: {
+        totalEmployees,
+        totalOutlets,
+        totalPrefields,
+        todayAddedOutlets,
+        activeEmployees: activeEmployeesCount,
+        inactiveEmployees: inactiveEmployeesCount,
+      },
+      chartData: {
+        categories,
+        series: {
+          employees: employeeSeries,
+          outlets: outletSeries,
+        },
+        filteredCounts: {
+          employees: filteredEmployeesTotal,
+          outlets: filteredOutletsTotal,
+        },
+        employeeStatus: {
+          active: activeEmployeesCount,
+          inactive: inactiveEmployeesCount,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Dashboard Stats Error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

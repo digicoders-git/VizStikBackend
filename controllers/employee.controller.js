@@ -947,7 +947,11 @@ export const getAllEmployeesAdmin = async (req, res) => {
     ======================== */
     if (fromDate || toDate) {
       query.createdAt = {};
-      if (fromDate) query.createdAt.$gte = new Date(fromDate);
+      if (fromDate) {
+        const start = new Date(fromDate);
+        start.setHours(0, 0, 0, 0);
+        query.createdAt.$gte = start;
+      }
       if (toDate) {
         let end = new Date(toDate);
         end.setHours(23, 59, 59, 999);
@@ -1000,16 +1004,56 @@ export const getAllEmployeesAdmin = async (req, res) => {
 ========================= */
 export const downloadEmployeesExcel = async (req, res) => {
   try {
-    const { role, Branch, Circle_AM, Section_AE } = req.query;
+    const {
+      search,
+      Branch,
+      Govt_District,
+      City,
+      typeOfDs,
+      isActive,
+      isVerified,
+      fromDate,
+      toDate,
+      Circle_AM,
+      Section_AE
+    } = req.query;
+
     let query = {};
-    if (Branch) {
-      query.Branch = { $regex: Branch, $options: "i" };
+
+    if (search) {
+      query.$or = [
+        { dsName: { $regex: search, $options: "i" } },
+        { dsMobile: { $regex: search, $options: "i" } },
+        { WD_Code: { $regex: search, $options: "i" } },
+        { Branch: { $regex: search, $options: "i" } },
+        { City: { $regex: search, $options: "i" } },
+        { Circle_AM: { $regex: search, $options: "i" } },
+        { Section_AE: { $regex: search, $options: "i" } }
+      ];
     }
-    if (Circle_AM) {
-      query.Circle_AM = { $regex: Circle_AM, $options: "i" };
-    }
-    if (Section_AE) {
-      query.Section_AE = { $regex: Section_AE, $options: "i" };
+
+    if (Branch) query.Branch = { $regex: Branch, $options: "i" };
+    if (Govt_District) query.Govt_District = Govt_District;
+    if (City) query.City = City;
+    if (typeOfDs) query.typeOfDs = typeOfDs;
+    if (Circle_AM) query.Circle_AM = { $regex: Circle_AM, $options: "i" };
+    if (Section_AE) query.Section_AE = { $regex: Section_AE, $options: "i" };
+
+    if (isActive !== undefined && isActive !== "") query.isActive = isActive === "true";
+    if (isVerified !== undefined && isVerified !== "") query.isVerified = isVerified === "true";
+
+    if (fromDate || toDate) {
+      query.createdAt = {};
+      if (fromDate) {
+        const start = new Date(fromDate);
+        start.setHours(0, 0, 0, 0);
+        query.createdAt.$gte = start;
+      }
+      if (toDate) {
+        let end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
     }
 
     const employees = await Employee.find(query).sort({ createdAt: -1 });
@@ -1023,6 +1067,8 @@ export const downloadEmployeesExcel = async (req, res) => {
       { header: "WD Code", key: "WD_Code", width: 15 },
       { header: "Mobile", key: "dsMobile", width: 15 },
       { header: "Branch", key: "Branch", width: 20 },
+      { header: "Circle AM", key: "Circle_AM", width: 20 },
+      { header: "Section AE", key: "Section_AE", width: 20 },
       { header: "City", key: "City", width: 20 },
       { header: "Type", key: "typeOfDs", width: 15 },
       { header: "Active", key: "isActive", width: 10 },
@@ -1037,6 +1083,8 @@ export const downloadEmployeesExcel = async (req, res) => {
         WD_Code: emp.WD_Code,
         dsMobile: emp.dsMobile,
         Branch: emp.Branch,
+        Circle_AM: emp.Circle_AM || "N/A",
+        Section_AE: emp.Section_AE || "N/A",
         City: emp.City,
         typeOfDs: emp.typeOfDs,
         isActive: emp.isActive ? "Yes" : "No",

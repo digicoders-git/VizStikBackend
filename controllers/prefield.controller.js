@@ -98,11 +98,33 @@ export const getAllPrefieldsAdmin = async (req, res) => {
 ========================= */
 export const downloadPrefieldsExcel = async (req, res) => {
   try {
-    const { Branch, Circle_AM, Section_AE } = req.query;
+    const { Branch, Circle_AM, Section_AE, search } = req.query;
     let query = {};
+
     if (Branch) query.Branch = { $regex: Branch, $options: "i" };
     if (Circle_AM) query.Circle_AM = { $regex: Circle_AM, $options: "i" };
     if (Section_AE) query.Section_AE = { $regex: Section_AE, $options: "i" };
+
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      const searchConditions = [
+        { Govt_District: searchRegex },
+        { City: searchRegex },
+        { WD_Code: searchRegex }
+      ];
+
+      if (!Branch) searchConditions.push({ Branch: searchRegex });
+      if (!Circle_AM) searchConditions.push({ Circle_AM: searchRegex });
+      if (!Section_AE) searchConditions.push({ Section_AE: searchRegex });
+
+      query.$and = [
+        ...(Branch ? [{ Branch: { $regex: Branch, $options: "i" } }] : []),
+        ...(Circle_AM ? [{ Circle_AM: { $regex: Circle_AM, $options: "i" } }] : []),
+        ...(Section_AE ? [{ Section_AE: { $regex: Section_AE, $options: "i" } }] : []),
+        { $or: searchConditions }
+      ];
+    }
+
     const data = await Prefield.find(query).sort({ WD_Code: 1 });
 
     const workbook = new ExcelJS.Workbook();

@@ -9,7 +9,9 @@ import {
   getAllOutletsAdmin,
   downloadOutletsExcel,
   deleteOutletAdmin,
-  downloadOutletsImagesZip
+  downloadOutletsImagesZip,
+  getOutletFilters,
+  getAdminDashboardStats
 } from "../controllers/outlet.controller.js";
 
 import employeeAuth from "../middleware/employeeAuth.js";
@@ -42,6 +44,8 @@ outletRoute.get("/", employeeAuth, getMyOutlets);
 outletRoute.get("/admin/all", getAllOutletsAdmin);
 outletRoute.get("/admin/download", downloadOutletsExcel);
 outletRoute.delete("/admin/delete/:id", verifyAdminToken, deleteOutletAdmin);
+outletRoute.get("/admin/filters", getOutletFilters);
+outletRoute.get("/admin/dashboard-stats", getAdminDashboardStats);
 outletRoute.get("/admin/download-images-zip", downloadOutletsImagesZip);
 
 
