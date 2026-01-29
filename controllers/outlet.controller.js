@@ -866,7 +866,7 @@ export const getOutletFilters = async (req, res) => {
 export const getAdminDashboardStats = async (req, res) => {
   try {
     const { filter = "Day", Branch, Circle_AM, Section_AE } = req.query;
-    console.log("Dashboard Stats Request:", { filter, Branch, Circle_AM, Section_AE });
+    // console.log("Dashboard Stats Request:", { filter, Branch, Circle_AM, Section_AE });
 
     const empQuery = {};
     if (Branch && Branch !== "undefined") empQuery.Branch = { $regex: Branch.trim(), $options: "i" };
@@ -1002,7 +1002,7 @@ export const getAdminDashboardStats = async (req, res) => {
       })
     ]);
 
-    console.log("Stats calculated:", { totalEmployees, totalOutlets, totalPrefields });
+    // console.log("Stats calculated:", { totalEmployees, totalOutlets, totalPrefields });
 
     res.json({
       success: true,
