@@ -273,7 +273,14 @@ export const getAllEmployees = async (req, res) => {
 export const getEmployeeById = async (req, res) => {
   try {
     const employee = await Employee.findById(req.params.id)
-      .populate("addedShops"); // 🔥 SHOP POPULATE
+      .populate({
+        path: "addedShops",
+        options: { sort: { createdAt: -1 } }
+      })
+      .populate({
+        path: "addedOutlet",
+        options: { sort: { createdAt: -1 } }
+      }); // 🔥 POPULATE WITH SORTING
 
     if (!employee) {
       return res.status(404).json({

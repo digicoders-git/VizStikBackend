@@ -132,7 +132,10 @@ export const getMyOutlets = async (req, res) => {
 ========================= */
 export const getOutletById = async (req, res) => {
   try {
-    const outlet = await Outlet.findById(req.params.id);
+    const outlet = await Outlet.findById(req.params.id).populate(
+      "createdBy",
+      "dsName dsMobile WD_Code typeOfDs Branch Govt_District Circle_AM Section_AE City"
+    );
 
     if (!outlet) {
       return res.status(404).json({

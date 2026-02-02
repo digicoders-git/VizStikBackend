@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import Employee from "../model/employee.model.js";
 import Admin from "../model/admin.models.js";
+import Login from "../model/login.model.js";
 
 const eitherAuth = async (req, res, next) => {
   try {
@@ -35,6 +36,15 @@ const eitherAuth = async (req, res, next) => {
     if (admin) {
       req.admin = admin;
       req.adminId = admin._id;
+      req.userType = "admin";
+      return next();
+    }
+
+    /* ================= TRY LOGIN USER (SUB-ADMIN) ================= */
+    const loginUser = await Login.findById(decoded.id);
+    if (loginUser) {
+      req.admin = loginUser;
+      req.adminId = loginUser._id;
       req.userType = "admin";
       return next();
     }

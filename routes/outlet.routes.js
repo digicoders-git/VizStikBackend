@@ -15,6 +15,7 @@ import {
 } from "../controllers/outlet.controller.js";
 
 import employeeAuth from "../middleware/employeeAuth.js";
+import eitherAuth from "../middleware/eitherAuth.js";
 import upload from "../middleware/multer.js";
 import { verifyAdminToken } from "../middleware/verifyAdminToken.js";
 
@@ -28,7 +29,7 @@ outletRoute.post(
   createOutlet
 );
 
-outletRoute.get("/:id", employeeAuth, getOutletById);
+outletRoute.get("/single/:id", eitherAuth, getOutletById);
 
 outletRoute.put(
   "/update/:id",
